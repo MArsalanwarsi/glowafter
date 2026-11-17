@@ -17,8 +17,13 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "react": ["./node_modules/@types/react", "./node_modules/react"],
+      "react-dom": ["./node_modules/@types/react-dom", "./node_modules/react-dom"],
+      "react/*": ["./node_modules/@types/react/*", "./node_modules/react/*"],
+      "react-dom/*": ["./node_modules/@types/react-dom/*", "./node_modules/react-dom/*"]
     },
     "target": "ES2017"
   },

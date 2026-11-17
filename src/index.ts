@@ -116,6 +116,75 @@ export interface ReactThemeSwitchAnimationProps {
   engine?: ThemeSwitchEngine
 }
 
+// Helper cubic-bezier solver for 60fps canvas tweening
+function solveCubicBezier(x1: number, y1: number, x2: number, y2: number): (p: number) => number {
+  const ax = 1 - 3 * x2 + 3 * x1
+  const bx = 3 * x2 - 6 * x1
+  const cx = 3 * x1
+  const ay = 1 - 3 * y2 + 3 * y1
+  const by = 3 * y2 - 6 * y1
+  const cy = 3 * y1
+
+  const sampleCurveX = (t: number) => ((ax * t + bx) * t + cx) * t
+  const sampleCurveY = (t: number) => ((ay * t + by) * t + cy) * t
+  const sampleCurveDerivativeX = (t: number) => (3 * ax * t + 2 * bx) * t + cx
+
+  return (x: number) => {
+    if (x <= 0) return 0
+    if (x >= 1) return 1
+    let t = x
+    for (let i = 0; i < 8; i++) {
+      const xEst = sampleCurveX(t) - x
+      if (Math.abs(xEst) < 1e-6) return sampleCurveY(t)
+      const dX = sampleCurveDerivativeX(t)
+      if (Math.abs(dX) < 1e-6) break
+      t -= xEst / dX
+    }
+    let t0 = 0
+    let t1 = 1
+    t = x
+    while (t0 < t1) {
+      const xEst = sampleCurveX(t) - x
+      if (Math.abs(xEst) < 1e-6) return sampleCurveY(t)
+      if (xEst > 0) t1 = t
+      else t0 = t
+      t = (t0 + t1) * 0.5
+    }
+    return sampleCurveY(t)
+  }
+}
+
+function parseEasingCurve(easingStr: string): (p: number) => number {
+  const str = (easingStr || '').trim()
+  if (!str || str === 'linear') return (p: number) => p
+  if (str === 'ease') return solveCubicBezier(0.25, 0.1, 0.25, 1.0)
+  if (str === 'ease-in') return solveCubicBezier(0.42, 0.0, 1.0, 1.0)
+  if (str === 'ease-out') return solveCubicBezier(0.0, 0.0, 0.58, 1.0)
+  if (str === 'ease-in-out') return solveCubicBezier(0.42, 0.0, 0.58, 1.0)
+
+  const cubicMatch = str.match(
+    /^cubic-bezier\(\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*\)$/i
+  )
+  if (cubicMatch) {
+    return solveCubicBezier(
+      parseFloat(cubicMatch[1]),
+      parseFloat(cubicMatch[2]),
+      parseFloat(cubicMatch[3]),
+      parseFloat(cubicMatch[4])
+    )
+  }
+
+  const stepsMatch = str.match(
+    /^steps\(\s*(\d+)(?:\s*,\s*(start|end|jump-start|jump-end|jump-none|jump-both))?\s*\)$/i
+  )
+  if (stepsMatch) {
+    const n = Math.max(1, parseInt(stepsMatch[1], 10))
+    return (p: number) => Math.floor(p * n) / n
+  }
+
+  return (p: number) => p
+}
+
 /**
  * Runs a 60fps full-screen transition overlay powered by GSAP and Canvas 2D
  */
@@ -132,7 +201,18 @@ export const runGsapCanvasTransition = async (options: {
     return
   }
 
-  const { default: gsap } = await import('gsap')
+  // Safely locate GSAP if available without breaking bundlers when building subdirectories on Vercel
+  let gsap: any = (window as any)?.gsap || null
+  if (!gsap) {
+    try {
+      const loadDynamic = new Function('mod', 'return import(mod)')
+      const imported = await loadDynamic('gsap')
+      gsap = imported?.default || imported
+    } catch {
+      gsap = null
+    }
+  }
+
   return new Promise<void>((resolve) => {
     const canvas = document.createElement('canvas')
     canvas.id = 'theme-switch-gsap-overlay'
@@ -162,58 +242,105 @@ export const runGsapCanvasTransition = async (options: {
     const state = { progress: 0 }
     let switched = false
 
-    // Map CSS easing string to GSAP easing name
-    let gsapEase = 'power2.out'
-    const easeStr = options.easing || ''
-    if (easeStr.includes('0.16, 1, 0.3, 1')) gsapEase = 'power3.out'
-    else if (easeStr.includes('0.34, 1.56, 0.64, 1')) gsapEase = 'back.out(1.4)'
-    else if (easeStr.includes('0.25, 1, 0.5, 1')) gsapEase = 'expo.out'
-    else if (easeStr.includes('linear')) gsapEase = 'none'
-    else if (easeStr.includes('steps')) gsapEase = 'steps(5)'
-    else if (easeStr.includes('ease-in-out')) gsapEase = 'power2.inOut'
+    if (gsap && typeof gsap.to === 'function') {
+      // Map CSS easing string to GSAP easing name
+      let gsapEase = 'power2.out'
+      const easeStr = options.easing || ''
+      if (easeStr.includes('0.16, 1, 0.3, 1')) gsapEase = 'power3.out'
+      else if (easeStr.includes('0.34, 1.56, 0.64, 1')) gsapEase = 'back.out(1.4)'
+      else if (easeStr.includes('0.25, 1, 0.5, 1')) gsapEase = 'expo.out'
+      else if (easeStr.includes('linear')) gsapEase = 'none'
+      else if (easeStr.includes('steps')) gsapEase = 'steps(5)'
+      else if (easeStr.includes('ease-in-out')) gsapEase = 'power2.inOut'
 
-    gsap.to(state, {
-      progress: 1,
-      duration: Math.max(0.2, options.duration / 1000),
-      ease: gsapEase,
-      onUpdate: () => {
+      gsap.to(state, {
+        progress: 1,
+        duration: Math.max(0.2, options.duration / 1000),
+        ease: gsapEase,
+        onUpdate: () => {
+          ctx.resetTransform()
+          ctx.scale(dpr, dpr)
+          ctx.clearRect(0, 0, w, h)
+          ctx.save()
+          try {
+            options.recipe.renderPreview(ctx, w, h, state.progress, options.isDarkMode, options.accentColor)
+          } catch {
+            ctx.fillStyle = options.isDarkMode ? '#0f172a' : '#f8fafc'
+            ctx.beginPath()
+            ctx.arc(w / 2, h / 2, Math.hypot(w, h) * state.progress, 0, Math.PI * 2)
+            ctx.fill()
+          } finally {
+            ctx.restore()
+          }
+
+          if (state.progress >= 1 && !switched) {
+            switched = true
+            options.onThemeSwitch()
+          }
+        },
+        onComplete: () => {
+          if (!switched) {
+            options.onThemeSwitch()
+          }
+          gsap.to(canvas, {
+            opacity: 0,
+            duration: 0.1,
+            ease: 'power1.out',
+            onComplete: () => {
+              canvas.remove()
+              resolve()
+            },
+          })
+        },
+      })
+    } else {
+      // High-performance 60fps native canvas tween ticker fallback
+      const startTime = performance.now()
+      const totalDuration = Math.max(200, options.duration)
+      const easingFn = parseEasingCurve(options.easing)
+
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime
+        const p = Math.min(1, Math.max(0, elapsed / totalDuration))
+        const easedT = easingFn(p)
+
         ctx.resetTransform()
         ctx.scale(dpr, dpr)
         ctx.clearRect(0, 0, w, h)
         ctx.save()
         try {
-          options.recipe.renderPreview(ctx, w, h, state.progress, options.isDarkMode, options.accentColor)
+          options.recipe.renderPreview(ctx, w, h, easedT, options.isDarkMode, options.accentColor)
         } catch {
-          // Fallback simple sweep if renderPreview throws
           ctx.fillStyle = options.isDarkMode ? '#0f172a' : '#f8fafc'
           ctx.beginPath()
-          ctx.arc(w / 2, h / 2, Math.hypot(w, h) * state.progress, 0, Math.PI * 2)
+          ctx.arc(w / 2, h / 2, Math.hypot(w, h) * easedT, 0, Math.PI * 2)
           ctx.fill()
         } finally {
           ctx.restore()
         }
 
-        // Commit only once the canvas reveal has reached its final frame.
-        if (state.progress >= 1 && !switched) {
+        if (p >= 1 && !switched) {
           switched = true
           options.onThemeSwitch()
         }
-      },
-      onComplete: () => {
-        if (!switched) {
-          options.onThemeSwitch()
-        }
-        gsap.to(canvas, {
-          opacity: 0,
-          duration: 0.1,
-          ease: 'power1.out',
-          onComplete: () => {
+
+        if (p < 1) {
+          requestAnimationFrame(animate)
+        } else {
+          if (!switched) {
+            options.onThemeSwitch()
+          }
+          canvas.style.transition = 'opacity 0.1s ease-out'
+          canvas.style.opacity = '0'
+          setTimeout(() => {
             canvas.remove()
             resolve()
-          },
-        })
-      },
-    })
+          }, 100)
+        }
+      }
+
+      requestAnimationFrame(animate)
+    }
   })
 }
 
