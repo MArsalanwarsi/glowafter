@@ -5,6 +5,7 @@ import { flushSync } from 'react-dom'
 import { getPresetById, PresetContext, PresetRecipe } from './presets/index'
 
 export * from './presets/index'
+export * from './presets/nature'
 
 const activeDocuments = new WeakSet<Document>()
 const storeTheme = (dark: boolean) => {
