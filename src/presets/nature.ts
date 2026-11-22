@@ -25,7 +25,211 @@ const ellipse = (x: number, y: number, rx: number, ry: number) =>
   point(-rx * 2, 0) +
   'Z'
 
-// Every frame uses the same path commands. The browser interpolates between samples.
+// ==========================================
+// 6 Cinematic Theme Transition Animations
+// ==========================================
+
+// 1. Viral Sweep: Smooth exponential circular shockwave expanding from the trigger origin
+const viralSweep: Shape = (w, h, t) => {
+  const cx = w * 0.5,
+    cy = h * 0.5
+  if (t <= 0)
+    return polygon([
+      [cx, cy],
+      [cx, cy],
+      [cx, cy],
+    ])
+  const maxR = Math.hypot(w, h) * 0.75
+  const p = smooth(t)
+  const r = maxR * Math.pow(p, 1.4)
+  const points: number[][] = []
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * Math.PI * 2
+    const wave = 1 + Math.sin(a * 12 - t * 18) * 0.035 * (1 - p) * Math.sin(Math.PI * p)
+    points.push([cx + Math.cos(a) * r * wave, cy + Math.sin(a) * r * wave])
+  }
+  return polygon(points)
+}
+
+// 2. Glass Shatter: Multi-facet Voronoi crystalline fracture shards radiating outward
+const glassShatter: Shape = (w, h, t) => {
+  const cx = w * 0.5,
+    cy = h * 0.5
+  if (t <= 0)
+    return polygon([
+      [cx, cy],
+      [cx, cy],
+      [cx, cy],
+    ])
+  const maxR = Math.hypot(w, h) * 0.76
+  const count = 20
+  let path = ''
+  for (let i = 0; i < count; i++) {
+    const a0 = (i / count) * Math.PI * 2
+    const a1 = ((i + 1) / count) * Math.PI * 2
+    const midA = (a0 + a1) / 2
+    const shardT = smooth(clamp((t - random(i * 3 + 7) * 0.12) / 0.88))
+    const r = maxR * Math.pow(shardT, 1.4)
+    const separation = Math.sin(Math.PI * shardT) * 10 * random(i + 1)
+    const ox = cx + Math.cos(midA) * separation
+    const oy = cy + Math.sin(midA) * separation
+    const f0 = [ox, oy]
+    const f1 = [
+      ox + Math.cos(a0) * r * (0.97 + 0.06 * random(i + 11)),
+      oy + Math.sin(a0) * r * (0.97 + 0.06 * random(i + 11)),
+    ]
+    const f2 = [
+      ox + Math.cos(midA - 0.04) * r * (1.03 + 0.05 * random(i + 12)),
+      oy + Math.sin(midA - 0.04) * r * (1.03 + 0.05 * random(i + 12)),
+    ]
+    const f3 = [
+      ox + Math.cos(midA + 0.04) * r * (1.02 + 0.05 * random(i + 13)),
+      oy + Math.sin(midA + 0.04) * r * (1.02 + 0.05 * random(i + 13)),
+    ]
+    const f4 = [
+      ox + Math.cos(a1) * r * (0.97 + 0.06 * random(i + 14)),
+      oy + Math.sin(a1) * r * (0.97 + 0.06 * random(i + 14)),
+    ]
+    path += polygon([f0, f1, f2, f3, f4])
+  }
+  return path
+}
+
+// 3. Seaside Waves: Sinusoidal ocean tidal surf with multi-harmonic wave crests
+const seasideWaves: Shape = (w, h, t) => {
+  const fill = smooth(t)
+  const level = h * (1.08 - 1.2 * fill)
+  const amp = Math.sin(Math.PI * fill) * Math.min(h * 0.07, 35)
+  const edge: number[][] = []
+  for (let i = 0; i <= 48; i++) {
+    const x = (i / 48) * w
+    const nx = i / 48
+    const wave =
+      Math.sin(nx * 10 + t * 14) * 0.55 +
+      Math.sin(nx * 22 - t * 18 + 1.4) * 0.3 +
+      Math.sin(nx * 38 + t * 24 + 0.8) * 0.15
+    const peak = Math.pow(Math.max(0, Math.sin(nx * 10 + t * 14)), 2) * 0.25 * amp
+    const y = level + wave * amp - peak
+    edge.push([x, y])
+  }
+  let path = polygon([[0, h + 20], ...edge, [w, h + 20]])
+  if (fill > 0.15 && fill < 0.85) {
+    for (let j = 0; j < 8; j++) {
+      const dropX = w * (0.1 + 0.8 * (j / 8))
+      const dropY = level - amp * 1.3 - Math.sin(t * 12 + j) * 8
+      const dropR = Math.sin(Math.PI * fill) * (1.5 + random(j) * 2)
+      path += ellipse(dropX, dropY, dropR, dropR)
+    }
+  }
+  return path
+}
+
+// 4. Balloon Pop: Elastic rubber bubble stretch followed by a sudden radial pop rupture
+const balloonPop: Shape = (w, h, t) => {
+  const cx = w * 0.5,
+    cy = h * 0.5
+  if (t <= 0)
+    return polygon([
+      [cx, cy],
+      [cx, cy],
+      [cx, cy],
+    ])
+  const maxR = Math.hypot(w, h) * 0.76
+  if (t <= 0.45) {
+    const p = t / 0.45
+    const r = Math.min(w, h) * 0.35 * smooth(p)
+    const points: number[][] = []
+    for (let i = 0; i < 48; i++) {
+      const a = (i / 48) * Math.PI * 2
+      const stretch = 1 + 0.08 * Math.sin(3 * a) * Math.sin(p * 9) + 0.05 * Math.cos(2 * a)
+      points.push([cx + Math.cos(a) * r * stretch, cy + Math.sin(a) * r * stretch * 1.08])
+    }
+    return polygon(points)
+  }
+  const popP = smooth((t - 0.45) / 0.55)
+  const rBase = Math.min(w, h) * 0.35
+  const blastR = rBase + (maxR - rBase) * Math.pow(popP, 1.35)
+  const points: number[][] = []
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * Math.PI * 2
+    const recoil = 1 + 0.12 * Math.sin(18 * a) * (1 - popP)
+    points.push([cx + Math.cos(a) * blastR * recoil, cy + Math.sin(a) * blastR * recoil])
+  }
+  return polygon(points)
+}
+
+// 5. Bomb Drop: Descending gravity projectile arc that detonates into a concussive shockwave
+const bombDrop: Shape = (w, h, t) => {
+  const maxR = Math.hypot(w, h) * 0.82
+  const impactX = w * 0.5,
+    impactY = h * 0.58
+  if (t <= 0)
+    return polygon([
+      [-10, -60],
+      [10, -60],
+      [0, -40],
+    ])
+  if (t <= 0.32) {
+    const pDrop = t / 0.32
+    const y = -h * 0.15 + (impactY + h * 0.15) * (pDrop * pDrop)
+    const x = w * 0.5 + Math.sin(pDrop * Math.PI) * w * 0.03
+    const r = 8 + 6 * pDrop
+    return ellipse(x, y, r, r * 1.4)
+  }
+  const pDet = smooth((t - 0.32) / 0.68)
+  const r = maxR * Math.pow(pDet, 1.3)
+  const points: number[][] = []
+  for (let i = 0; i < 56; i++) {
+    const a = (i / 56) * Math.PI * 2
+    const spike = 1 + 0.1 * Math.sin(14 * a + pDet * 8) * (1 - pDet) + 0.05 * Math.sin(28 * a) * (1 - pDet)
+    points.push([impactX + Math.cos(a) * r * spike, impactY + Math.sin(a) * r * spike])
+  }
+  return polygon(points)
+}
+
+// 6. Party: Starburst explosion with dispersing confetti ribbons and geometric streamers
+const party: Shape = (w, h, t) => {
+  const cx = w * 0.5,
+    cy = h * 0.5
+  if (t <= 0)
+    return polygon([
+      [cx, cy],
+      [cx, cy],
+      [cx, cy],
+    ])
+  const maxR = Math.hypot(w, h) * 0.78
+  const p = smooth(t)
+  const coreR = maxR * Math.pow(p, 1.4)
+  const points: number[][] = []
+  for (let i = 0; i < 36; i++) {
+    const a = (i / 36) * Math.PI * 2
+    const isRay = i % 2 === 1
+    const rayExt = isRay ? 1.0 + 0.18 * Math.sin(Math.PI * p) : 0.88
+    points.push([cx + Math.cos(a) * coreR * rayExt, cy + Math.sin(a) * coreR * rayExt])
+  }
+  let path = polygon(points)
+  if (p > 0.1 && p < 0.95) {
+    for (let k = 0; k < 12; k++) {
+      const ca = (k / 12) * Math.PI * 2 + p * 2
+      const cdist = coreR * 1.08 + Math.sin(Math.PI * p) * (20 + 35 * random(k))
+      const px = cx + Math.cos(ca) * cdist
+      const py = cy + Math.sin(ca) * cdist
+      const sz = (6 + 8 * random(k + 2)) * Math.sin(Math.PI * p)
+      path += polygon([
+        [px - sz, py],
+        [px, py - sz],
+        [px + sz, py],
+        [px, py + sz],
+      ])
+    }
+  }
+  return path
+}
+
+// ==========================================
+// Nature & Material Transition Animations
+// ==========================================
+
 const water: (rain: boolean) => Shape = (rain) => (w, h, t) => {
   const fill = smooth((t - 0.06) / 0.94)
   const level = h * (1.04 - fill * 1.1)
@@ -87,7 +291,6 @@ const ripple: Shape = (w, h, t) => {
     const p = smooth((t - i * 0.055) / (1 - i * 0.055))
     const r = Math.hypot(w, h) * p
     path += ellipse(x, y, r * 0.85, r * 0.65)
-    // Counter-wound inner contours create the travelling ripple around each pool.
     const ring = r + Math.sin(Math.PI * p) * 12
     path += ellipse(x, y, ring * 0.85, ring * 0.65).replace(/ 0 1 0 /g, ' 0 1 1 ')
     path += ellipse(x, y, (ring + 1.5 * Math.sin(Math.PI * p)) * 0.85, (ring + 1.5 * Math.sin(Math.PI * p)) * 0.65)
@@ -154,7 +357,6 @@ const fracture: Shape = (w, h, t) => {
       [(a[0] + b[0]) / 2 + Math.sin(angle * 7) * r * 0.08, (a[1] + b[1]) / 2 + Math.cos(angle * 3) * r * 0.08],
       b,
     ])
-    // A leading hairline races ahead of the opening.
     const crack = Math.min(radius, r * 1.5)
     path += polygon([
       [cx, cy],
@@ -241,6 +443,7 @@ const ink: Shape = (w, h, t) => {
     })
   )
 }
+
 const blinds: Shape = (w, h, t) => {
   let path = ''
   for (let i = 0; i < 12; i++) {
@@ -262,7 +465,9 @@ function recipe(
   description: string,
   family: PresetFamily,
   shape: Shape,
-  duration: number
+  duration: number,
+  supportsOrigin: boolean = false,
+  supportsDirection: boolean = false
 ): PresetRecipe {
   const frame: Shape = (w, h, t) => shape(w, h, clamp(t))
   return {
@@ -274,10 +479,17 @@ function recipe(
     motionKeywords: [id, name.toLowerCase()],
     defaultDuration: duration,
     defaultEasing: 'linear',
+    supportsOrigin,
+    supportsDirection,
     revealPath: frame,
     renderPreview(ctx, w, h, t, dark) {
+      ctx.save()
       ctx.fillStyle = dark ? '#242723' : '#f4f2eb'
-      ctx.fill(new Path2D(frame(w, h, t)))
+      try {
+        ctx.fill(new Path2D(frame(w, h, t)))
+      } finally {
+        ctx.restore()
+      }
     },
     generateStyle({ width, height, duration }) {
       const frames = Array.from({ length: 49 }, (_, i) => {
@@ -288,7 +500,9 @@ function recipe(
       return (
         '::view-transition-new(root){animation:natureReveal ' +
         duration +
-        'ms linear both!important;will-change:clip-path}@keyframes natureReveal{' +
+        'ms linear both!important;will-change:clip-path;transform:translateZ(0)}' +
+        '::view-transition-old(root){transform:translateZ(0);will-change:clip-path}' +
+        '@keyframes natureReveal{' +
         frames.join('') +
         '}'
       )
@@ -297,6 +511,64 @@ function recipe(
 }
 
 export const naturePresets = [
+  // 6 Cinematic Theme Transition Animations
+  recipe(
+    'viral-sweep',
+    'Viral Sweep',
+    'Smooth exponential circular shockwave expanding from the trigger origin.',
+    'sound-and-signals',
+    viralSweep,
+    1200,
+    true
+  ),
+  recipe(
+    'glass-shatter',
+    'Glass Shatter',
+    'Multi-facet Voronoi crystalline fracture shards radiating outward.',
+    'glass-and-optics',
+    glassShatter,
+    1400,
+    true
+  ),
+  recipe(
+    'seaside-waves',
+    'Seaside Waves',
+    'Sinusoidal ocean tidal surf with multi-harmonic wave crests.',
+    'ink-and-water',
+    seasideWaves,
+    1600,
+    false,
+    true
+  ),
+  recipe(
+    'balloon-pop',
+    'Balloon Pop',
+    'Elastic rubber bubble stretch followed by a sudden radial pop rupture.',
+    'everyday-objects',
+    balloonPop,
+    1300,
+    true
+  ),
+  recipe(
+    'bomb-drop',
+    'Bomb Drop',
+    'Descending gravity projectile arc that detonates into a concussive shockwave.',
+    'mechanical-motion',
+    bombDrop,
+    1500,
+    true
+  ),
+  recipe(
+    'party',
+    'Party',
+    'Starburst explosion with dispersing confetti ribbons and geometric streamers.',
+    'paper-and-folds',
+    party,
+    1400,
+    true
+  ),
+
+  // Nature & Material Transition Animations
   recipe(
     'waterfall',
     'Water Tank',

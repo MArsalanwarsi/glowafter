@@ -18,10 +18,11 @@ import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
 import { FEATURED_PRESETS, useModeAnimation, type PresetRecipe } from '../../../src'
 
-const groups = ['All motion', 'Water', 'Material', 'Organic', 'Custom'] as const
+const groups = ['All motion', 'Cinematic', 'Water', 'Material', 'Organic', 'Custom'] as const
 function group(recipe: PresetRecipe) {
   if (recipe.supportsGif) return 'Custom'
   if (['falling-leaves', 'ink-bloom'].includes(recipe.id)) return 'Organic'
+  if (['viral-sweep', 'glass-shatter', 'balloon-pop', 'bomb-drop', 'party'].includes(recipe.id)) return 'Cinematic'
   if (recipe.family === 'ink-and-water') return 'Water'
   return 'Material'
 }
@@ -67,7 +68,7 @@ export default function Home() {
 
 import { Button } from '@/components/ui/button'
 import { useTheme } from 'next-themes'
-import { useModeAnimation } from 'react-theme-switch-animation'
+import { useModeAnimation } from 'glowafter'
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
@@ -198,7 +199,7 @@ export function ThemeToggle() {
                   Use your shadcn Button with a next-themes provider configured with attribute=&quot;class&quot;.
                 </DialogDescription>
               </DialogHeader>
-              <code className="install-command">npm install react-theme-switch-animation next-themes</code>
+              <code className="install-command">npm install glowafter next-themes</code>
               <p className="text-sm text-muted-foreground">
                 These presets are in this local development build. Publish or install the local package to use them.
               </p>

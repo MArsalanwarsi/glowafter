@@ -1,6 +1,6 @@
 # Example Next.js App
 
-This is an example implementation demonstrating the usage of `react-theme-switch-animation`.
+This is an interactive playground demonstrating the usage of `glowafter`.
 
 ## Getting Started
 

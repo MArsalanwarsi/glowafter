@@ -1,38 +1,57 @@
 {
-  "name": "react-theme-switch-animation",
-  "version": "1.3.0",
-  "description": "Beautiful, smooth animations for theme switching in React applications. Features Circle, Blur Circle, QR Scan, Polygon, Polygon Gradient, and Custom GIF animations with TypeScript support.",
+  "name": "glowafter",
+  "version": "1.0.0",
+  "description": "Cinematic, stutter-free theme transition animations for React & Next.js powered by View Transitions API with GSAP canvas fallback.",
   "keywords": [
+    "glowafter",
     "react",
     "reactjs",
-    "hooks",
     "theme",
     "animation",
-    "switch",
-    "typescript",
-    "nextjs",
-    "dark",
-    "light",
-    "view-transition",
-    "circle",
-    "blur",
-    "qr-scan",
-    "polygon",
-    "polygon-gradient",
-    "gif",
-    "theme-toggle",
+    "theme-switch",
+    "view-transitions",
     "dark-mode",
-    "tailwindcss",
-    "smooth-animation",
-    "ui-component"
+    "light-mode",
+    "nextjs",
+    "tailwind",
+    "shadcn",
+    "cinematic",
+    "view-transitions-api",
+    "gsap"
   ],
+  "homepage": "https://github.com/MArsalanwarsi/light-dark-theme-switch#readme",
+  "bugs": {
+    "url": "https://github.com/MArsalanwarsi/light-dark-theme-switch/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MArsalanwarsi/light-dark-theme-switch.git"
+  },
   "license": "MIT",
   "author": "Muhammad Arsalan Warsi",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./presets/nature": {
+      "types": "./dist/presets/nature.d.ts",
+      "import": "./dist/presets/nature.js",
+      "require": "./dist/presets/nature.js",
+      "default": "./dist/presets/nature.js"
+    },
+    "./package.json": "./package.json"
+  },
   "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "typings": "dist/index.d.ts",
   "files": [
-    "dist/**/*",
-    "src/**/*"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "npm run build:ts",
@@ -44,12 +63,11 @@
     "prepare": "husky",
     "prepublishOnly": "npm run build",
     "release": "release-it",
+    "test": "tsx tests/run-all.ts",
     "test:browser": "playwright test"
   },
   "dependencies": {
-    "gsap": "^3.15.1",
-    "react": "^17.0.0 || ^18.0.0 || ^19.0.0",
-    "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0"
+    "gsap": "^3.15.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
@@ -71,7 +89,10 @@
     "postcss-cli": "^11.0.1",
     "prettier": "^3.9.6",
     "prettier-plugin-packagejson": "^3.0.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "release-it": "^21.0.1",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.66.0"
   },

@@ -19,6 +19,12 @@ export function MotionArtwork({ recipe, large = false }: { recipe: PresetRecipe;
       if (!ctx) return
       ctx.scale(scale, scale)
       const backgrounds: Record<string, string> = {
+        'viral-sweep': '#bcc6d8',
+        'glass-shatter': '#c4d0d9',
+        'seaside-waves': '#b8ccd4',
+        'balloon-pop': '#d8c2c0',
+        'bomb-drop': '#c2beb8',
+        party: '#d8c8b4',
         waterfall: '#bec9b7',
         'silver-rain': '#bdc9ce',
         'puddle-bloom': '#c3c6b1',

@@ -4,11 +4,11 @@ import { naturePresets } from '../../src/presets/nature'
 
 test.describe.configure({ mode: 'parallel' })
 
-const url = 'http://127.0.0.1:4176/react-theme-switch-animation/'
+const url = 'http://127.0.0.1:4176/glowafter/'
 async function open(page: Page) {
   await page.route('http://127.0.0.1:4176/**', async (route) => {
     const relative = decodeURIComponent(
-      new URL(route.request().url()).pathname.replace('/react-theme-switch-animation', '')
+      new URL(route.request().url()).pathname.replace(/^\/(glowafter|react-theme-switch-animation)/, '')
     )
     await route.fulfill({ path: path.resolve('example/out', relative === '/' ? 'index.html' : relative.slice(1)) })
   })
@@ -113,9 +113,9 @@ test('failed GIF is recoverable and leaves the theme intact', async ({ page }) =
   await page.getByRole('button', { name: 'Select Custom GIF', exact: true }).click()
   await page.getByRole('textbox', { name: 'GIF URL' }).fill('data:image/gif;base64,AAAA')
   await page.getByRole('button', { name: 'Play selected transition' }).click()
-  await expect(page.getByRole('alert')).toBeVisible()
+  await expect(page.locator('.error-message')).toBeVisible()
   await expect(page.locator('html')).not.toHaveClass(/dark/)
-  await page.getByRole('button', { name: 'Select Rainfall', exact: true }).click()
+  await page.getByRole('button', { name: 'Select Seaside Waves', exact: true }).click()
   await page.getByRole('button', { name: 'Play selected transition' }).click()
   await expect(page.getByRole('button', { name: 'Play selected transition' })).toBeEnabled({ timeout: 10000 })
   await expect(page.locator('html')).toHaveClass(/dark/)
@@ -158,7 +158,11 @@ test('unsupported native transition uses the fallback and clears its canvas', as
   await open(page)
   await page.getByRole('button', { name: 'Play selected transition' }).click()
   await expect(page.locator('#theme-switch-gsap-overlay')).toHaveCount(1)
-  expect(await page.locator('#theme-switch-gsap-overlay').evaluate(canvas => (canvas as HTMLCanvasElement).width * (canvas as HTMLCanvasElement).height)).toBeLessThan(2003000)
+  expect(
+    await page
+      .locator('#theme-switch-gsap-overlay')
+      .evaluate((canvas) => (canvas as HTMLCanvasElement).width * (canvas as HTMLCanvasElement).height)
+  ).toBeLessThan(2003000)
   await expect(page.getByRole('button', { name: 'Play selected transition' })).toBeEnabled({ timeout: 10000 })
   await expect(page.locator('#theme-switch-gsap-overlay')).toHaveCount(0)
   await expect(page.locator('html')).toHaveClass(/dark/)
@@ -168,16 +172,18 @@ test('filters, duration slider and keyboard dialog work', async ({ page }) => {
   await open(page)
   await page.getByRole('tab', { name: 'Material', exact: true }).click()
   await expect(page.getByRole('button', { name: /^Select / })).toHaveCount(5)
+  await page.getByRole('tab', { name: 'Cinematic', exact: true }).click()
+  await expect(page.getByRole('button', { name: /^Select / })).toHaveCount(5)
   await page.getByRole('tab', { name: 'Custom', exact: true }).click()
   await expect(page.getByRole('button', { name: /^Select / })).toHaveCount(1)
   const slider = page.getByRole('slider')
   await slider.focus()
   await page.keyboard.press('ArrowRight')
-  await expect(slider).toHaveAttribute('aria-valuenow', '2500')
+  await expect(slider).toHaveAttribute('aria-valuenow', '1300')
   const trigger = page.getByRole('button', { name: 'Get the code' })
   await trigger.click()
   await expect(page.getByRole('dialog')).toBeVisible()
-  await expect(page.getByRole('dialog')).toContainText('duration: 2500')
+  await expect(page.getByRole('dialog')).toContainText('duration: 1300')
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(trigger).toBeFocused()

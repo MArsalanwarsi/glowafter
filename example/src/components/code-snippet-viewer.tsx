@@ -23,7 +23,7 @@ export const CodeSnippetViewer: React.FC<CodeSnippetViewerProps> = ({
   const snippetCode = `'use client'
 
 import React from 'react'
-import { useModeAnimation } from 'react-theme-switch-animation'
+import { useModeAnimation } from 'glowafter'
 
 export const ThemeToggle = () => {
   const { ref, toggleSwitchTheme, isDarkMode } = useModeAnimation({
@@ -80,7 +80,9 @@ export const ThemeToggle = () => {
       </pre>
 
       <div className="mt-3 pt-3 border-t border-stone-800/80 flex items-center justify-between text-xs text-stone-400">
-        <span>Local package: <code>react-theme-switch-animation</code></span>
+        <span>
+          Package: <code>glowafter</code>
+        </span>
         <span className="text-violet-400 font-medium">114 Transitions • Zero Stutter</span>
       </div>
     </div>

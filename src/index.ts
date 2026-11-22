@@ -43,7 +43,14 @@ export enum ThemeAnimationDirection {
 export type ThemeSwitchEngine = 'auto' | 'view-transition' | 'gsap'
 
 export type ThemeSwitchTrigger =
-  React.MouseEvent<HTMLElement> | HTMLElement | { clientX: number; clientY: number } | null | undefined
+  | React.MouseEvent<HTMLElement>
+  | React.TouchEvent<HTMLElement>
+  | TouchEvent
+  | MouseEvent
+  | HTMLElement
+  | { clientX: number; clientY: number }
+  | null
+  | undefined
 
 // Exponential easing curves (CSS linear() approximations)
 const EXPO_OUT_EASING =
@@ -82,6 +89,7 @@ const injectBaseStyles = () => {
         ::view-transition-new(root) {
           mix-blend-mode: normal;
           transform: translateZ(0);
+          will-change: clip-path;
           backface-visibility: hidden;
         }
       `
@@ -174,9 +182,7 @@ function parseEasingCurve(easingStr: string): (p: number) => number {
     )
   }
 
-  const stepsMatch = str.match(
-    /^steps\(\s*(\d+)(?:\s*,\s*(start|end|jump-start|jump-end|jump-none|jump-both))?\s*\)$/i
-  )
+  const stepsMatch = str.match(/^steps\(\s*(\d+)(?:\s*,\s*(start|end|jump-start|jump-end|jump-none|jump-both))?\s*\)$/i)
   if (stepsMatch) {
     const n = Math.max(1, parseInt(stepsMatch[1], 10))
     return (p: number) => Math.floor(p * n) / n
@@ -370,7 +376,7 @@ export const useModeAnimation = (props?: ReactThemeSwitchAnimationProps): ReactT
   const [mounted, setMounted] = useState<boolean>(false)
 
   // Look up preset if provided
-  const preset = getPresetById(presetId ?? (directAnimationType ? '' : 'waterfall'))
+  const preset = getPresetById(presetId ?? (directAnimationType ? '' : 'viral-sweep')) ?? getPresetById('waterfall')
   const animationType = directAnimationType ?? preset?.originalType ?? ThemeAnimationType.CIRCLE
 
   const propsDuration =
@@ -445,19 +451,33 @@ export const useModeAnimation = (props?: ReactThemeSwitchAnimationProps): ReactT
     const willBeDark = !isCurrentlyDark
 
     // Respect reduced-motion preference
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || duration === 0 || document.hidden) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || duration === 0) {
       document.documentElement.classList.toggle(globalClassName, willBeDark)
       storeTheme(willBeDark)
       flushSync(() => setIsDarkMode(willBeDark))
       return
     }
 
-    // Determine trigger origin (x, y) with reliable viewport center fallback
+    // Determine trigger origin (x, y) with reliable touch and viewport center fallback
     let x = window.innerWidth / 2
     let y = window.innerHeight / 2
 
     if (trigger) {
-      if ('clientX' in trigger && typeof trigger.clientX === 'number') {
+      const touchTarget = trigger as any
+      const touch =
+        (touchTarget.touches && touchTarget.touches.length > 0 && touchTarget.touches[0]) ||
+        (touchTarget.changedTouches && touchTarget.changedTouches.length > 0 && touchTarget.changedTouches[0]) ||
+        (touchTarget.nativeEvent?.touches &&
+          touchTarget.nativeEvent.touches.length > 0 &&
+          touchTarget.nativeEvent.touches[0]) ||
+        (touchTarget.nativeEvent?.changedTouches &&
+          touchTarget.nativeEvent.changedTouches.length > 0 &&
+          touchTarget.nativeEvent.changedTouches[0])
+
+      if (touch && typeof touch.clientX === 'number' && typeof touch.clientY === 'number') {
+        x = touch.clientX
+        y = touch.clientY
+      } else if ('clientX' in trigger && typeof trigger.clientX === 'number' && typeof trigger.clientY === 'number') {
         x = trigger.clientX
         y = trigger.clientY
       } else if ('getBoundingClientRect' in trigger && typeof trigger.getBoundingClientRect === 'function') {
@@ -636,12 +656,14 @@ export const useModeAnimation = (props?: ReactThemeSwitchAnimationProps): ReactT
         z-index: 1 !important;
         backface-visibility: hidden !important;
         transform: translateZ(0) !important;
+        will-change: clip-path !important;
       }
       ::view-transition-new(root) {
         mix-blend-mode: normal !important;
         z-index: 9999 !important;
         backface-visibility: hidden !important;
         transform: translateZ(0) !important;
+        will-change: clip-path !important;
         animation-duration: ${duration}ms !important;
         animation-timing-function: ${easing} !important;
         animation-fill-mode: both !important;
