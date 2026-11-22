@@ -10,9 +10,21 @@ fi
 
 version=$(node -p "require('./package.json').version")
 name=$(node -p "require('./package.json').name")
+registry="${NPM_CONFIG_REGISTRY:-https://registry.npmjs.org}"
 
 echo "Package: $name"
-echo "Target Version: $version"
+echo "Initial Version: $version"
+
+# Check if this version is already published on the npm registry
+status_code=$(curl -s -o /dev/null -w "%{http_code}" "$registry/$name/$version" || true)
+echo "Registry HTTP status for $name@$version: $status_code"
+
+if [[ "$status_code" != "404" ]]; then
+  echo "Version $version is already published on npm. Bumping patch version automatically..."
+  npm version patch --no-git-tag-version --ignore-scripts
+  version=$(node -p "require('./package.json').version")
+  echo "New release version: $version"
+fi
 
 # Ensure fresh production build
 npm run build
@@ -23,19 +35,9 @@ filename=$(npm pack --silent --pack-destination "$artifact_dir")
 artifact="$artifact_dir/$filename"
 echo "Packaged artifact: $filename ($artifact)"
 
-# Check if this version is already published on the npm registry
-registry="${NPM_CONFIG_REGISTRY:-https://registry.npmjs.org}"
-status_code=$(curl -s -o /dev/null -w "%{http_code}" "$registry/$name/$version" || true)
-
-echo "Registry HTTP status for $name@$version: $status_code"
-
-if [[ "$status_code" == "404" ]]; then
-  echo "Version $version is new. Publishing $artifact to npm with public access..."
-  npm publish "$artifact" --access public --tag latest
-  echo "Successfully published $name@$version to npm!"
-else
-  echo "Version $version is already published on npm."
-fi
+echo "Publishing $name@$version to npm with public access..."
+npm publish "$artifact" --access public --tag latest
+echo "Successfully published $name@$version to npm!"
 
 # Best-effort git tag (non-blocking if GitHub Actions token has restricted permissions)
 git config user.name 'github-actions[bot]' 2>/dev/null || true

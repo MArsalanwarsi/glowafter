@@ -1,6 +1,6 @@
 {
   "name": "glowafter",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Cinematic, stutter-free theme transition animations for React (Vite, Next.js, Remix, CRA) in JavaScript & TypeScript, powered by the View Transitions API with GSAP canvas fallback.",
   "keywords": [
     "glowafter",
