@@ -44,7 +44,8 @@ function group(recipe: PresetRecipe) {
 }
 
 type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun'
-type CodeRecipeTab = 'nextjs' | 'vite' | 'gif' | 'perform'
+type CodeLanguage = 'js' | 'ts'
+type FrameworkTarget = 'react' | 'nextjs' | 'vanilla' | 'gif'
 
 function GithubIcon({ size = 16 }: { size?: number }) {
   return (
@@ -68,9 +69,16 @@ export default function Home() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [badgeCopied, setBadgeCopied] = useState(false)
+
+  // Dialog Code Generator options
+  const [modalLang, setModalLang] = useState<CodeLanguage>('js')
+  const [modalTarget, setModalTarget] = useState<'react' | 'nextjs'>('react')
+
+  // Quickstart Section options
   const [activePm, setActivePm] = useState<PackageManager>('npm')
   const [pmCopied, setPmCopied] = useState(false)
-  const [activeRecipe, setActiveRecipe] = useState<CodeRecipeTab>('nextjs')
+  const [quickstartLang, setQuickstartLang] = useState<CodeLanguage>('js')
+  const [quickstartTarget, setQuickstartTarget] = useState<FrameworkTarget>('react')
   const [recipeCopied, setRecipeCopied] = useState(false)
 
   const localGif = useRef<string | null>(null)
@@ -112,34 +120,116 @@ export default function Home() {
     if (el) el.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const snippet = `'use client'
+  // Generate dynamic snippet for the Dialog based on current preset, duration, language, and target
+  const getModalSnippet = () => {
+    const gifLine = selected.supportsGif ? "\n    gifUrl: '/motion/reveal.gif'," : ''
 
-import { Button } from '@/components/ui/button'
+    if (modalTarget === 'react') {
+      if (modalLang === 'js') {
+        return `// src/components/ThemeToggle.jsx
+import { useModeAnimation } from 'glowafter'
+
+export function ThemeToggle() {
+  const { ref, toggleSwitchTheme, isDarkMode, mounted, isAnimating } = useModeAnimation({
+    presetId: '${selected.id}',
+    duration: ${duration},${gifLine}
+  })
+
+  if (!mounted) return null
+
+  return (
+    <button
+      ref={ref}
+      onClick={toggleSwitchTheme}
+      disabled={isAnimating}
+      className="px-4 py-2 rounded-lg font-medium bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+    >
+      {isDarkMode ? '☀️ Light' : '🌙 Dark'}
+    </button>
+  )
+}`
+      }
+      return `// src/components/ThemeToggle.tsx
+import React from 'react'
+import { useModeAnimation, type NaturePresetId } from 'glowafter'
+
+export const ThemeToggle: React.FC = () => {
+  const { ref, toggleSwitchTheme, isDarkMode, mounted, isAnimating } = useModeAnimation({
+    presetId: '${selected.id}' as NaturePresetId,
+    duration: ${duration},${gifLine}
+  })
+
+  if (!mounted) return null
+
+  return (
+    <button
+      ref={ref}
+      onClick={toggleSwitchTheme}
+      disabled={isAnimating}
+      className="px-4 py-2 rounded-lg font-medium bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+    >
+      {isDarkMode ? '☀️ Light' : '🌙 Dark'}
+    </button>
+  )
+}`
+    }
+
+    // Next.js with next-themes
+    if (modalLang === 'js') {
+      return `// components/ThemeToggle.jsx
+'use client'
+
 import { useTheme } from 'next-themes'
 import { useModeAnimation } from 'glowafter'
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
-  const { toggleSwitchTheme, mounted, isAnimating } =
-    useModeAnimation({
-      presetId: '${selected.id}',
-      duration: ${duration},${selected.supportsGif ? "\n      gifUrl: '/motion/reveal.gif'," : ''}
-      isDarkMode: resolvedTheme === 'dark',
-      onDarkModeChange: dark => setTheme(dark ? 'dark' : 'light'),
-    })
+  const { ref, toggleSwitchTheme, mounted, isAnimating } = useModeAnimation({
+    presetId: '${selected.id}',
+    duration: ${duration},${gifLine}
+    isDarkMode: resolvedTheme === 'dark',
+    onDarkModeChange: dark => setTheme(dark ? 'dark' : 'light'),
+  })
+
+  if (!mounted) return null
 
   return (
-    <Button onClick={toggleSwitchTheme}
-      disabled={!mounted || isAnimating}>
+    <button ref={ref} onClick={toggleSwitchTheme} disabled={isAnimating}>
+      {resolvedTheme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+    </button>
+  )
+}`
+    }
+
+    return `// components/theme-toggle.tsx
+'use client'
+
+import { Button } from '@/components/ui/button'
+import { useTheme } from 'next-themes'
+import { useModeAnimation, type NaturePresetId } from 'glowafter'
+
+export function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const { ref, toggleSwitchTheme, mounted, isAnimating } = useModeAnimation({
+    presetId: '${selected.id}' as NaturePresetId,
+    duration: ${duration},${gifLine}
+    isDarkMode: resolvedTheme === 'dark',
+    onDarkModeChange: dark => setTheme(dark ? 'dark' : 'light'),
+  })
+
+  return (
+    <Button ref={ref} onClick={toggleSwitchTheme} disabled={!mounted || isAnimating}>
       Change theme
     </Button>
   )
 }`
+  }
 
-  const copy = async () => {
+  const copyModalSnippet = async () => {
     try {
-      await navigator.clipboard.writeText(snippet)
+      await navigator.clipboard.writeText(getModalSnippet())
       setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     } catch {
       setError('Select the code below to copy it manually.')
     }
@@ -147,7 +237,7 @@ export function ThemeToggle() {
 
   const copyInstallBadge = async () => {
     try {
-      await navigator.clipboard.writeText('npm install glowafter next-themes')
+      await navigator.clipboard.writeText('npm install glowafter')
       setBadgeCopied(true)
       setTimeout(() => setBadgeCopied(false), 2000)
     } catch {
@@ -156,10 +246,10 @@ export function ThemeToggle() {
   }
 
   const pmCommands: Record<PackageManager, string> = {
-    npm: 'npm install glowafter next-themes',
-    pnpm: 'pnpm add glowafter next-themes',
-    yarn: 'yarn add glowafter next-themes',
-    bun: 'bun add glowafter next-themes',
+    npm: 'npm install glowafter',
+    pnpm: 'pnpm add glowafter',
+    yarn: 'yarn add glowafter',
+    bun: 'bun add glowafter',
   }
 
   const copyPmCommand = async () => {
@@ -172,10 +262,100 @@ export function ThemeToggle() {
     }
   }
 
-  const recipeCodes: Record<CodeRecipeTab, { filename: string; code: string }> = {
-    nextjs: {
-      filename: 'components/theme-toggle.tsx',
-      code: `'use client'
+  // Quickstart code generator based on language and framework
+  const getQuickstartCode = (): { filename: string; code: string } => {
+    if (quickstartTarget === 'react') {
+      if (quickstartLang === 'js') {
+        return {
+          filename: 'src/components/ThemeToggle.jsx',
+          code: `import { useModeAnimation } from 'glowafter'
+
+export function ThemeToggle() {
+  // glowafter manages .dark on <html> & syncs with localStorage automatically
+  const { ref, toggleSwitchTheme, isDarkMode, mounted, isAnimating } = useModeAnimation({
+    presetId: 'viral-sweep',
+    duration: 1200,
+  })
+
+  if (!mounted) return null
+
+  return (
+    <button
+      ref={ref}
+      onClick={toggleSwitchTheme}
+      disabled={isAnimating}
+      className="px-4 py-2 rounded-lg font-medium bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 transition"
+      aria-label="Toggle theme"
+    >
+      {isDarkMode ? '☀️ Light' : '🌙 Dark'}
+    </button>
+  )
+}`,
+        }
+      }
+      return {
+        filename: 'src/components/ThemeToggle.tsx',
+        code: `import React from 'react'
+import { useModeAnimation, type NaturePresetId } from 'glowafter'
+
+interface ThemeToggleProps {
+  presetId?: NaturePresetId
+}
+
+export const ThemeToggle: React.FC<ThemeToggleProps> = ({ presetId = 'viral-sweep' }) => {
+  const { ref, toggleSwitchTheme, isDarkMode, mounted, isAnimating } = useModeAnimation({
+    presetId,
+    duration: 1200,
+  })
+
+  if (!mounted) return null
+
+  return (
+    <button
+      ref={ref}
+      onClick={toggleSwitchTheme}
+      disabled={isAnimating}
+      className="px-4 py-2 rounded-lg font-medium bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 transition"
+      aria-label="Toggle theme"
+    >
+      {isDarkMode ? '☀️ Light' : '🌙 Dark'}
+    </button>
+  )
+}`,
+      }
+    }
+
+    if (quickstartTarget === 'nextjs') {
+      if (quickstartLang === 'js') {
+        return {
+          filename: 'components/ThemeToggle.jsx',
+          code: `'use client'
+
+import { useTheme } from 'next-themes'
+import { useModeAnimation } from 'glowafter'
+
+export function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const { ref, toggleSwitchTheme, mounted, isAnimating } = useModeAnimation({
+    presetId: 'glass-shatter',
+    duration: 1400,
+    isDarkMode: resolvedTheme === 'dark',
+    onDarkModeChange: (dark) => setTheme(dark ? 'dark' : 'light'),
+  })
+
+  if (!mounted) return null
+
+  return (
+    <button ref={ref} onClick={toggleSwitchTheme} disabled={isAnimating} className="p-2 border rounded-md">
+      {resolvedTheme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+    </button>
+  )
+}`,
+        }
+      }
+      return {
+        filename: 'components/theme-toggle.tsx',
+        code: `'use client'
 
 import { Button } from '@/components/ui/button'
 import { useModeAnimation, type NaturePresetId } from 'glowafter'
@@ -199,39 +379,16 @@ export function ThemeToggle({ presetId = 'viral-sweep' }: { presetId?: NaturePre
     </Button>
   )
 }`,
-    },
-    vite: {
-      filename: 'src/ThemeToggle.tsx',
-      code: `import React from 'react'
-import { useModeAnimation } from 'glowafter'
+      }
+    }
 
-export function ThemeToggle() {
-  const { ref, toggleSwitchTheme, isDarkMode, mounted, isAnimating } = useModeAnimation({
-    presetId: 'glass-shatter',
-    duration: 1400,
-  })
+    if (quickstartTarget === 'gif') {
+      const ext = quickstartLang === 'js' ? 'jsx' : 'tsx'
+      return {
+        filename: `src/components/GifToggle.${ext}`,
+        code: `${quickstartLang === 'js' ? '' : "'use client'\n\n"}import { useModeAnimation } from 'glowafter'
 
-  if (!mounted) return null
-
-  return (
-    <button
-      ref={ref}
-      onClick={toggleSwitchTheme}
-      disabled={isAnimating}
-      className="px-4 py-2 rounded-lg bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
-    >
-      {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-    </button>
-  )
-}`,
-    },
-    gif: {
-      filename: 'components/gif-theme-toggle.tsx',
-      code: `'use client'
-
-import { useModeAnimation } from 'glowafter'
-
-export function GifThemeToggle() {
+export function GifToggle() {
   const { ref, toggleSwitchTheme, isAnimating } = useModeAnimation({
     presetId: 'gif',
     gifUrl: '/assets/reveal-mask.gif',
@@ -239,33 +396,41 @@ export function GifThemeToggle() {
   })
 
   return (
-    <button ref={ref} onClick={toggleSwitchTheme} disabled={isAnimating}>
-      Switch Theme with Animated GIF
+    <button ref={ref} onClick={toggleSwitchTheme} disabled={isAnimating} className="px-4 py-2 border rounded-md">
+      Switch Theme with Custom GIF Mask
     </button>
   )
 }`,
-    },
-    perform: {
-      filename: 'utils/theme-trigger.ts',
+      }
+    }
+
+    // Vanilla JavaScript / Headless performSwitch
+    return {
+      filename: 'src/theme-switch.js',
       code: `import { performSwitch } from 'glowafter'
 
-// Headless direct execution for vanilla JS, state machines, or custom triggers
-export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
+// Headless direct function for vanilla JS, Svelte, Vue, or event listeners
+const button = document.getElementById('theme-toggle-btn')
+
+button.addEventListener('click', async (event) => {
   await performSwitch({
     presetId: 'viral-sweep',
-    trigger: event, // Preserves touch/mouse coordinates
+    trigger: event, // Preserves exact touch/mouse coordinates
     duration: 1200,
-    updateTheme: async () => {
+    updateTheme: () => {
+      // Optional: defaults to toggling 'dark' on <html> & saving in localStorage
       document.documentElement.classList.toggle('dark')
     },
   })
-}`,
-    },
+})`,
+    }
   }
+
+  const activeRecipe = getQuickstartCode()
 
   const copyActiveRecipe = async () => {
     try {
-      await navigator.clipboard.writeText(recipeCodes[activeRecipe].code)
+      await navigator.clipboard.writeText(activeRecipe.code)
       setRecipeCopied(true)
       setTimeout(() => setRecipeCopied(false), 2000)
     } catch {
@@ -314,7 +479,7 @@ export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
 
       <main>
         <section className="intro">
-          <p className="eyebrow">OPEN-SOURCE REACT ANIMATION ENGINE</p>
+          <p className="eyebrow">UNIVERSAL REACT ANIMATION ENGINE · JAVASCRIPT &amp; TYPESCRIPT</p>
           <div className="intro-row">
             <h1>
               A different kind
@@ -339,17 +504,17 @@ export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
               title="Click to copy install command"
             >
               <Terminal size={12} />
-              <code>npm i glowafter next-themes</code>
+              <code>npm i glowafter</code>
               {badgeCopied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
             </button>
             <span className="hero-badge">
-              <Sparkles size={12} /> 17 Procedural Presets + GIF Mask
+              <Sparkles size={12} /> JavaScript &amp; TypeScript
             </span>
             <span className="hero-badge">
-              <Smartphone size={12} /> Zero Mobile Stutter
+              <Smartphone size={12} /> React · Vite · Next.js · CRA
             </span>
             <span className="hero-badge">
-              <ShieldCheck size={12} /> View Transitions API + GSAP
+              <ShieldCheck size={12} /> Zero Mobile Stutter
             </span>
           </div>
         </section>
@@ -405,17 +570,42 @@ export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
               <DialogHeader>
                 <DialogTitle>{selected.name} in your project</DialogTitle>
                 <DialogDescription>
-                  Use your shadcn Button with a next-themes provider configured with attribute=&quot;class&quot;.
+                  Copy the code below for pure React (Vite / CRA) or Next.js in JavaScript or TypeScript.
                 </DialogDescription>
               </DialogHeader>
-              <code className="install-command">npm install glowafter next-themes</code>
-              <p className="text-sm text-muted-foreground">
-                These presets are in this local development build. Publish or install the local package to use them.
-              </p>
+
+              <div className="flex items-center justify-between gap-2 pt-2">
+                <div className="flex gap-1.5">
+                  <button
+                    className="pm-btn text-xs"
+                    data-active={modalTarget === 'react'}
+                    onClick={() => setModalTarget('react')}
+                  >
+                    React (Vite / CRA)
+                  </button>
+                  <button
+                    className="pm-btn text-xs"
+                    data-active={modalTarget === 'nextjs'}
+                    onClick={() => setModalTarget('nextjs')}
+                  >
+                    Next.js
+                  </button>
+                </div>
+                <div className="lang-toggle">
+                  <button className="lang-btn" data-active={modalLang === 'js'} onClick={() => setModalLang('js')}>
+                    JavaScript
+                  </button>
+                  <button className="lang-btn" data-active={modalLang === 'ts'} onClick={() => setModalLang('ts')}>
+                    TypeScript
+                  </button>
+                </div>
+              </div>
+
+              <code className="install-command">npm install glowafter</code>
               <pre tabIndex={0}>
-                <code>{snippet}</code>
+                <code>{getModalSnippet()}</code>
               </pre>
-              <Button onClick={copy}>
+              <Button onClick={copyModalSnippet}>
                 {copied ? <Check /> : <Copy />}
                 {copied ? 'Copied' : 'Copy component'}
               </Button>
@@ -533,13 +723,13 @@ export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
             ======================================================== */}
         <section id="why" className="why-section">
           <div className="section-header">
-            <p className="eyebrow">HIGH PERFORMANCE ENGINEERING</p>
+            <p className="eyebrow">UNIVERSAL &amp; HIGH PERFORMANCE</p>
             <h2>
               Why <em>glowafter?</em>
             </h2>
             <p>
               Standard theme switchers either flash abruptly or stutter heavily on mobile touch screens. glowafter is
-              engineered to deliver flawless 60/120 FPS transitions across all modern devices.
+              engineered to deliver flawless 60/120 FPS transitions in any React app using JavaScript or TypeScript.
             </p>
           </div>
           <div className="why-grid">
@@ -547,24 +737,22 @@ export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
               <div className="why-card-icon">
                 <Smartphone size={22} />
               </div>
-              <h3>Zero-Stutter Mobile Touch</h3>
+              <h3>Universal React (JS &amp; TS)</h3>
               <p>
-                Mobile browsers often misreport <code>document.hidden</code> during tap gestures and lack mouse
-                coordinates. glowafter extracts raw coordinates from <code>touches[0]</code> /{' '}
-                <code>changedTouches[0]</code>, eliminates false-skip visibility checks, and applies GPU compositor
-                promotion via <code>transform: translateZ(0)</code> and <code>will-change: clip-path</code>.
+                Works across Vite, Next.js (App &amp; Pages Router), Remix, Astro, and CRA. Requires zero configuration
+                and no external state libraries. Features first-class support for both <strong>JavaScript</strong> and{' '}
+                <strong>TypeScript</strong>.
               </p>
             </div>
             <div className="why-card">
               <div className="why-card-icon">
                 <Sparkles size={22} />
               </div>
-              <h3>Procedural Vector Mathematics</h3>
+              <h3>Zero-Stutter Mobile Touch</h3>
               <p>
-                Zero heavy video files or massive pre-rendered textures. All 17 presets are computed mathematically in
-                pure SVG geometry: multi-harmonic wave harmonics, Voronoi fracture shards, and elastic tension curves.
-                Every preset strictly guarantees &lt;0.02 coverage at t=0 and &gt;0.99 at t=1 across 320px to 4K
-                viewports.
+                Mobile browsers often misreport <code>document.hidden</code> during tap gestures. glowafter extracts raw
+                touch coordinates from <code>touches[0]</code> / <code>changedTouches[0]</code> and promotes GPU
+                compositor layers via <code>transform: translateZ(0)</code> and <code>will-change: clip-path</code>.
               </p>
             </div>
             <div className="why-card">
@@ -575,7 +763,7 @@ export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
               <p>
                 Leverages the native browser View Transitions API for peak 120 FPS hardware performance, and seamlessly
                 falls back to GSAP canvas rendering on older WebKit and Firefox browsers. Automatically honors{' '}
-                <code>prefers-reduced-motion</code> with instantaneous theme state swaps.
+                <code>prefers-reduced-motion</code> with instant swaps.
               </p>
             </div>
           </div>
@@ -591,8 +779,8 @@ export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
               Install once. <em>Use anywhere.</em>
             </h2>
             <p>
-              Designed for Next.js App Router, Vite, shadcn/ui, and Tailwind CSS. Add cinematic theme switching with a
-              single hook.
+              Designed for Vite, Next.js, Remix, CRA, and vanilla JS. Toggle below between JavaScript and TypeScript to
+              view matching code recipes.
             </p>
           </div>
 
@@ -619,68 +807,93 @@ export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
                 <div className="flex gap-2">
                   <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>
-                    <strong>Next.js 14, 15, and 16</strong> App Router and Pages Router compatible.
+                    <strong>JavaScript &amp; TypeScript</strong> ready out of the box with complete types.
                   </span>
                 </div>
                 <div className="flex gap-2">
                   <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>
-                    <strong>Official shadcn/ui & next-themes</strong> 2-line drop-in setup.
+                    <strong>Vite, CRA, Next.js &amp; Remix</strong> zero-config compatibility.
                   </span>
                 </div>
                 <div className="flex gap-2">
                   <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>
-                    <strong>Full TypeScript Strict Mode</strong> declarations and auto-completion.
+                    <strong>Zero lock-in</strong>: automatically manages <code>classList</code> &amp;{' '}
+                    <code>localStorage</code>, or connects to your state.
                   </span>
                 </div>
                 <div className="flex gap-2">
                   <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>
-                    <strong>Dynamic GIF Mask Engine</strong> for branded and custom alpha transitions.
+                    <strong>Headless performSwitch() API</strong> for vanilla JS and custom UI buttons.
                   </span>
                 </div>
               </div>
             </div>
 
             <div>
-              <div className="recipe-tabs flex gap-2 mb-3">
-                <button
-                  className="pm-btn"
-                  data-active={activeRecipe === 'nextjs'}
-                  onClick={() => setActiveRecipe('nextjs')}
-                >
-                  Next.js App Router
-                </button>
-                <button
-                  className="pm-btn"
-                  data-active={activeRecipe === 'vite'}
-                  onClick={() => setActiveRecipe('vite')}
-                >
-                  Vite / React SPA
-                </button>
-                <button className="pm-btn" data-active={activeRecipe === 'gif'} onClick={() => setActiveRecipe('gif')}>
-                  Custom GIF
-                </button>
-                <button
-                  className="pm-btn"
-                  data-active={activeRecipe === 'perform'}
-                  onClick={() => setActiveRecipe('perform')}
-                >
-                  Headless API
-                </button>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex gap-1.5 flex-wrap">
+                  <button
+                    className="pm-btn"
+                    data-active={quickstartTarget === 'react'}
+                    onClick={() => setQuickstartTarget('react')}
+                  >
+                    React (Vite / CRA)
+                  </button>
+                  <button
+                    className="pm-btn"
+                    data-active={quickstartTarget === 'nextjs'}
+                    onClick={() => setQuickstartTarget('nextjs')}
+                  >
+                    Next.js
+                  </button>
+                  <button
+                    className="pm-btn"
+                    data-active={quickstartTarget === 'vanilla'}
+                    onClick={() => setQuickstartTarget('vanilla')}
+                  >
+                    Vanilla JS
+                  </button>
+                  <button
+                    className="pm-btn"
+                    data-active={quickstartTarget === 'gif'}
+                    onClick={() => setQuickstartTarget('gif')}
+                  >
+                    Custom GIF
+                  </button>
+                </div>
+                {quickstartTarget !== 'vanilla' && (
+                  <div className="lang-toggle">
+                    <button
+                      className="lang-btn"
+                      data-active={quickstartLang === 'js'}
+                      onClick={() => setQuickstartLang('js')}
+                    >
+                      JS
+                    </button>
+                    <button
+                      className="lang-btn"
+                      data-active={quickstartLang === 'ts'}
+                      onClick={() => setQuickstartLang('ts')}
+                    >
+                      TS
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="recipe-card">
                 <div className="recipe-header">
-                  <span>{recipeCodes[activeRecipe].filename}</span>
+                  <span>{activeRecipe.filename}</span>
                   <button onClick={copyActiveRecipe} className="copy-pill-btn" aria-label="Copy snippet">
                     {recipeCopied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
                     <span>{recipeCopied ? 'Copied' : 'Copy Code'}</span>
                   </button>
                 </div>
                 <pre className="recipe-body">
-                  <code>{recipeCodes[activeRecipe].code}</code>
+                  <code>{activeRecipe.code}</code>
                 </pre>
               </div>
             </div>
@@ -750,7 +963,7 @@ export async function handleThemeSwitch(event: MouseEvent | TouchEvent) {
           <span className="brand-symbol" />
           <span className="wordmark">glowafter</span>
         </div>
-        <span>Cinematic Theme Transitions for React & Next.js</span>
+        <span>Cinematic Theme Transitions for React in JavaScript &amp; TypeScript</span>
         <div className="footer-meta">
           <a
             href="https://github.com/MArsalanwarsi/glowafter"

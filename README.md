@@ -3,16 +3,17 @@
 
 # glowafter
 
-  <p><strong>Cinematic, stutter-free theme transition animations for React & Next.js.</strong></p>
-  <p>Engineered with the native View Transitions API, procedural SVG path mathematics, and GSAP canvas fallback.</p>
+  <p><strong>Cinematic, stutter-free theme transition animations for React in JavaScript & TypeScript.</strong></p>
+  <p>Works across Vite, Next.js, Remix, Astro, and Create React App. Zero configuration required.</p>
 
   <p>
     <a href="https://www.npmjs.com/package/glowafter"><img src="https://img.shields.io/npm/v/glowafter.svg?style=flat-square&color=38bdf8" alt="npm version" /></a>
     <a href="https://www.npmjs.com/package/glowafter"><img src="https://img.shields.io/npm/dm/glowafter.svg?style=flat-square&color=34d399" alt="npm downloads" /></a>
     <a href="https://github.com/MArsalanwarsi/glowafter/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-purple.svg?style=flat-square" alt="License: MIT" /></a>
     <a href="https://github.com/MArsalanwarsi/glowafter"><img src="https://img.shields.io/badge/github-glowafter-181717.svg?style=flat-square&logo=github" alt="GitHub Repository" /></a>
-    <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square" alt="TypeScript Strict" />
-    <img src="https://img.shields.io/badge/React-17%20%7C%2018%20%7C%2019-61DAFB?style=flat-square" alt="React 17, 18, 19" />
+    <img src="https://img.shields.io/badge/JavaScript-ES6%2B%20%7C%20JSX-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript JSX" />
+    <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript Strict" />
+    <img src="https://img.shields.io/badge/React-17%20%7C%2018%20%7C%2019-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 17, 18, 19" />
   </p>
 
   <p>
@@ -24,82 +25,149 @@
 
 An open-source React animation library that elevates light and dark mode toggles into cinematic visual experiences. Instead of abrupt color flashes or jarring repaints, `glowafter` orchestrates fluid, procedural vector reveals: multi-harmonic ocean tides, Voronoi crystalline fractures, balloon pops, concussive bomb shockwaves, capillary ink blooms, and custom animated GIF alpha masks.
 
-Engineered from the ground up for 60/120 FPS performance, `glowafter` eliminates mobile browser stutter with dedicated multi-touch coordinate tracking (`touches[0]` and `changedTouches[0]`), hardware compositor promotion (`transform: translateZ(0)` and `will-change: clip-path`), and a fallback canvas engine powered by GSAP for environments without native View Transitions support.
+Engineered from the ground up for 60/120 FPS performance, `glowafter` is framework-agnostic across the entire React ecosystem:
 
-Visit the interactive demonstration playground at **[https://glowafter.vercel.app](https://glowafter.vercel.app)** to test all 17 presets, adjust durations in real-time, upload custom GIF masks, and copy production-ready code snippets.
+- **Language Agnostic**: First-class support for both **JavaScript** (`.jsx` / `.js`) and **TypeScript** (`.tsx` / `.ts`).
+- **Framework Agnostic**: Works out of the box with **Vite**, **Next.js (App & Pages Router)**, **Remix**, **Astro**, **Create React App**, and vanilla React.
+- **Zero-Lock-in**: `next-themes` is 100% optional. In standalone React, `glowafter` automatically manages the `dark` class on `<html>` and syncs with `localStorage`.
+- **Zero-Stutter Mobile Touch**: Multi-touch coordinate extraction (`touches[0]` / `changedTouches[0]`) and GPU compositor layer promotion (`transform: translateZ(0)` and `will-change: clip-path`).
+- **Dual-Engine Pipeline**: Native View Transitions API on Chromium with automated GSAP canvas fallback on Safari/Firefox and instant switch for `prefers-reduced-motion`.
+
+Visit the interactive demonstration playground at **[https://glowafter.vercel.app](https://glowafter.vercel.app)** to test all 17 presets live, adjust durations, upload custom GIF masks, and copy production-ready code snippets.
 
 ---
 
-## 🌟 Why glowafter?
+## 📦 Installation
 
-| The Problem with Conventional Toggles                                                                                                                                                     | The glowafter Solution                                                                                                                                                                       |
-| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Jarring Screen Flash**: Standard dark mode toggles switch class names instantly, producing an unstyled flash of bright light or pitch dark that strains users' eyes.                    | **Smooth Procedural Geometry**: View Transitions API captures snapshots of the previous and incoming theme, morphing between them using continuous mathematical vector paths.                |
-| **Mobile Freezing & Skipping**: Generic transition experiments fail on mobile touch screens because `document.hidden` falsely fires during touch events, prematurely skipping animations. | **Dedicated Touch Coordinate Extraction**: Touch events inspect `touches[0]` and `changedTouches[0]`. `document.hidden` skipping is eliminated to ensure touch taps always animate smoothly. |
-| **Main-Thread Frame Drops**: Animating full-viewport `clip-path` on standard DOM nodes forces continuous CPU rasterization.                                                               | **Hardware GPU Layer Promotion**: Automatically injects `transform: translateZ(0)` and `will-change: clip-path` onto `::view-transition-old(root)` and `::view-transition-new(root)`.        |
-| **Clipping Artifacts & Incomplete Fills**: Hard-coded pixel values fail on high-DPI, ultra-wide, or mobile screens.                                                                       | **Strict Coverage Contracts**: Every preset mathematically guarantees initial coverage `< 0.02` at $t=0$ and final coverage `> 0.99` at $t=1$ across any viewport aspect ratio.              |
-| **Cross-Browser Gaps**: Browsers lacking the View Transitions API (e.g. older Safari or Firefox) break or crash.                                                                          | **Dual-Engine Architecture**: Automatically falls back to an off-screen GSAP canvas render pipeline, and honors `prefers-reduced-motion` with instantaneous swaps.                           |
+Install `glowafter` using your preferred package manager:
+
+```bash
+# npm
+npm install glowafter
+
+# pnpm
+pnpm add glowafter
+
+# yarn
+yarn add glowafter
+
+# bun
+bun add glowafter
+```
+
+> **Note**: `glowafter` has zero required runtime peer dependencies beyond `react` and `react-dom`. External packages like `next-themes` or `shadcn/ui` are completely optional.
 
 ---
 
 ## 🚀 Quick start
 
-Use Node.js **18.17+** and any modern package manager:
+### 1. React + JavaScript (Vite / CRA / SPA)
 
-```bash
-# npm
-npm install glowafter next-themes
+No extra libraries needed. `glowafter` automatically manages the `dark` class on `document.documentElement` and stores the selection in `localStorage`:
 
-# pnpm
-pnpm add glowafter next-themes
+```jsx
+// src/components/ThemeToggle.jsx
+import { useModeAnimation } from 'glowafter'
 
-# yarn
-yarn add glowafter next-themes
+export function ThemeToggle() {
+  const { ref, toggleSwitchTheme, isDarkMode, mounted, isAnimating } = useModeAnimation({
+    presetId: 'viral-sweep', // choose from 17 presets
+    duration: 1200, // milliseconds
+  })
 
-# bun
-bun add glowafter next-themes
-```
+  // Prevent SSR hydration mismatch
+  if (!mounted) return null
 
-### Next.js App Router (2-Step Integration)
-
-#### Step 1: Wrap your layout in `next-themes`
-
-Create `components/theme-provider.tsx`:
-
-```tsx
-'use client'
-
-import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from 'next-themes'
-import * as React from 'react'
-
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
-}
-```
-
-Wrap your root layout in `app/layout.tsx`:
-
-```tsx
-import { ThemeProvider } from '@/components/theme-provider'
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
+    <button
+      ref={ref}
+      onClick={toggleSwitchTheme}
+      disabled={isAnimating}
+      className="px-4 py-2 rounded-lg font-medium bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 transition"
+      aria-label="Toggle theme"
+    >
+      {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+    </button>
   )
 }
 ```
 
-#### Step 2: Add the Animated Theme Toggle Button
+---
 
-Create `components/theme-toggle.tsx`:
+### 2. React + TypeScript (Vite / CRA / SPA)
+
+Full strict mode type safety and IntelliSense auto-completion:
 
 ```tsx
+// src/components/ThemeToggle.tsx
+import { useModeAnimation, type NaturePresetId } from 'glowafter'
+import React from 'react'
+
+interface ThemeToggleProps {
+  presetId?: NaturePresetId
+  duration?: number
+}
+
+export const ThemeToggle: React.FC<ThemeToggleProps> = ({ presetId = 'viral-sweep', duration = 1200 }) => {
+  const { ref, toggleSwitchTheme, isDarkMode, mounted, isAnimating } = useModeAnimation({
+    presetId,
+    duration,
+  })
+
+  if (!mounted) return null
+
+  return (
+    <button
+      ref={ref}
+      onClick={toggleSwitchTheme}
+      disabled={isAnimating}
+      className="px-4 py-2 rounded-lg font-medium bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 transition"
+      aria-label="Toggle theme"
+    >
+      {isDarkMode ? '☀️ Light' : '🌙 Dark'}
+    </button>
+  )
+}
+```
+
+---
+
+### 3. Next.js + JavaScript (App Router)
+
+If you use `next-themes` with Next.js in plain JavaScript:
+
+```jsx
+// components/ThemeToggle.jsx
+'use client'
+
+import { useModeAnimation } from 'glowafter'
+import { useTheme } from 'next-themes'
+
+export function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const { ref, toggleSwitchTheme, mounted, isAnimating } = useModeAnimation({
+    presetId: 'glass-shatter',
+    duration: 1400,
+    isDarkMode: resolvedTheme === 'dark',
+    onDarkModeChange: (dark) => setTheme(dark ? 'dark' : 'light'),
+  })
+
+  if (!mounted) return null
+
+  return (
+    <button ref={ref} onClick={toggleSwitchTheme} disabled={isAnimating} className="p-2 border rounded-md">
+      {resolvedTheme === 'dark' ? '☀️' : '🌙'}
+    </button>
+  )
+}
+```
+
+---
+
+### 4. Next.js + TypeScript (App Router + shadcn/ui)
+
+```tsx
+// components/theme-toggle.tsx
 'use client'
 
 import { Button } from '@/components/ui/button'
@@ -133,10 +201,35 @@ export function ThemeToggle({ presetId = 'viral-sweep' }: ThemeToggleProps) {
       onClick={toggleSwitchTheme}
       aria-label="Toggle theme"
     >
-      {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </Button>
   )
 }
+```
+
+---
+
+### 5. Headless / Vanilla JavaScript API (`performSwitch`)
+
+For vanilla JavaScript, state machines, Svelte, Vue, or event listeners without React hooks:
+
+```javascript
+// theme-switch.js
+import { performSwitch } from 'glowafter'
+
+const switchButton = document.querySelector('#theme-switch')
+
+switchButton.addEventListener('click', async (event) => {
+  await performSwitch({
+    presetId: 'viral-sweep',
+    trigger: event, // Pass MouseEvent or TouchEvent for origin calculations
+    duration: 1200,
+    updateTheme: () => {
+      // Optional callback; defaults to toggling 'dark' on <html> & saving to localStorage
+      document.documentElement.classList.toggle('dark')
+    },
+  })
+})
 ```
 
 ---
@@ -165,6 +258,18 @@ export function ThemeToggle({ presetId = 'viral-sweep' }: ThemeToggleProps) {
 | **Organic**   | `falling-leaves` | Autumn Leaves           | Swirling autumnal foliage with sinusoidal gravitational drift            | 1.6s           |
 | **Organic**   | `ink-bloom`      | Ink Bloom               | Multi-capillary viscous fluid diffusion blossom radiating outward        | 1.5s           |
 | **Custom**    | `gif`            | Custom GIF Mask         | Dynamic alpha mask driven by user-supplied transparent GIF frames        | User defined   |
+
+---
+
+## 🌟 Why glowafter?
+
+| The Problem with Conventional Toggles                                                                                                                                                     | The glowafter Solution                                                                                                                                                                       |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Jarring Screen Flash**: Standard dark mode toggles switch class names instantly, producing an unstyled flash of bright light or pitch dark that strains users' eyes.                    | **Smooth Procedural Geometry**: View Transitions API captures snapshots of the previous and incoming theme, morphing between them using continuous mathematical vector paths.                |
+| **Mobile Freezing & Skipping**: Generic transition experiments fail on mobile touch screens because `document.hidden` falsely fires during touch events, prematurely skipping animations. | **Dedicated Touch Coordinate Extraction**: Touch events inspect `touches[0]` and `changedTouches[0]`. `document.hidden` skipping is eliminated to ensure touch taps always animate smoothly. |
+| **Main-Thread Frame Drops**: Animating full-viewport `clip-path` on standard DOM nodes forces continuous CPU rasterization.                                                               | **Hardware GPU Layer Promotion**: Automatically injects `transform: translateZ(0)` and `will-change: clip-path` onto `::view-transition-old(root)` and `::view-transition-new(root)`.        |
+| **Clipping Artifacts & Incomplete Fills**: Hard-coded pixel values fail on high-DPI, ultra-wide, or mobile screens.                                                                       | **Strict Coverage Contracts**: Every preset mathematically guarantees initial coverage `< 0.02` at $t=0$ and final coverage `> 0.99` at $t=1$ across any viewport aspect ratio.              |
+| **Cross-Browser Gaps**: Browsers lacking the View Transitions API (e.g. older Safari or Firefox) break or crash.                                                                          | **Dual-Engine Architecture**: Automatically falls back to an off-screen GSAP canvas render pipeline, and honors `prefers-reduced-motion` with instantaneous swaps.                           |
 
 ---
 
@@ -207,22 +312,21 @@ Mobile devices are vulnerable to animation skips and dropped frames during viewp
 
 ## 🖼️ Custom GIF Alpha Mask Engine
 
-You can use any transparent animated GIF as a dynamic mask. Transparent pixels preserve the outgoing theme, while opaque pixels reveal the incoming theme:
+You can use any transparent animated GIF as a dynamic mask in both JavaScript and TypeScript. Transparent pixels preserve the outgoing theme, while opaque pixels reveal the incoming theme:
 
-```tsx
-'use client'
-
+```jsx
+// src/GifToggle.jsx (or GifToggle.tsx)
 import { useModeAnimation } from 'glowafter'
 
 export function CustomGifToggle() {
-  const { ref, toggleSwitchTheme } = useModeAnimation({
+  const { ref, toggleSwitchTheme, isAnimating } = useModeAnimation({
     presetId: 'gif',
     gifUrl: '/assets/ink-reveal.gif',
     duration: 2200,
   })
 
   return (
-    <button ref={ref} onClick={toggleSwitchTheme} className="px-4 py-2 border rounded-md">
+    <button ref={ref} onClick={toggleSwitchTheme} disabled={isAnimating} className="px-4 py-2 border rounded-md">
       Switch Theme with Custom Mask
     </button>
   )
@@ -231,54 +335,55 @@ export function CustomGifToggle() {
 
 ---
 
-## ⚡ Direct Function API (`performSwitch`)
-
-For vanilla JavaScript, state machines, Web Components, or custom canvas triggers outside of React components:
-
-```typescript
-import { performSwitch } from 'glowafter'
-
-buttonElement.addEventListener('click', async (event) => {
-  await performSwitch({
-    presetId: 'glass-shatter',
-    trigger: event, // Pass MouseEvent or TouchEvent for origin calculations
-    duration: 1400,
-    updateTheme: async () => {
-      document.documentElement.classList.toggle('dark')
-    },
-  })
-})
-```
-
----
-
 ## 📚 API Reference
 
 ### `useModeAnimation(options)`
 
-Primary React hook for wiring theme toggles.
+Primary React hook for wiring theme toggles (available in JavaScript & TypeScript).
 
-#### Parameters
+#### Options (`ReactThemeSwitchAnimationProps`)
 
-| Option             | Type                      | Default         | Description                                                                      |
-| :----------------- | :------------------------ | :-------------- | :------------------------------------------------------------------------------- |
-| `presetId`         | `NaturePresetId`          | `'viral-sweep'` | The ID of the preset to animate (or `'gif'`).                                    |
-| `duration`         | `number`                  | Preset default  | Duration in milliseconds (clamped between 0 and 15,000ms).                       |
-| `easing`           | `string`                  | `'linear'`      | CSS transition easing function.                                                  |
-| `gifUrl`           | `string`                  | `undefined`     | Absolute or relative URL to transparent GIF (required when `presetId: 'gif'`).   |
-| `isDarkMode`       | `boolean`                 | `undefined`     | Controlled dark mode state. When omitted, automatically inspects DOM class list. |
-| `onDarkModeChange` | `(dark: boolean) => void` | `undefined`     | Callback invoked when the theme toggle state changes.                            |
-| `globalClassName`  | `string`                  | `'dark'`        | HTML class toggled on `document.documentElement`.                                |
+| Option             | Type                                    | Default         | Description                                                                              |
+| :----------------- | :-------------------------------------- | :-------------- | :--------------------------------------------------------------------------------------- |
+| `presetId`         | `NaturePresetId \| string`              | `'viral-sweep'` | The ID of the preset to animate (or `'gif'`).                                            |
+| `duration`         | `number`                                | Preset default  | Duration in milliseconds (clamped between 0 and 15,000ms).                               |
+| `easing`           | `string`                                | `'linear'`      | CSS transition easing function.                                                          |
+| `gifUrl`           | `string`                                | `undefined`     | Absolute or relative URL to transparent GIF (required when `presetId: 'gif'`).           |
+| `isDarkMode`       | `boolean`                               | `undefined`     | Controlled dark mode state. When omitted, automatically inspects DOM and `localStorage`. |
+| `onDarkModeChange` | `(dark: boolean) => void`               | `undefined`     | Callback invoked when the theme toggle state changes.                                    |
+| `globalClassName`  | `string`                                | `'dark'`        | HTML class toggled on `document.documentElement`.                                        |
+| `engine`           | `'auto' \| 'view-transition' \| 'gsap'` | `'auto'`        | Select rendering engine explicitly or let glowafter auto-detect.                         |
 
-#### Return Value
+#### Return Value (`ReactThemeSwitchAnimationHook`)
 
-| Field               | Type                                                              | Description                                                                    |
-| :------------------ | :---------------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| `ref`               | `React.RefObject`                                                 | Optional ref to attach to the trigger button for automatic origin coordinates. |
-| `toggleSwitchTheme` | `(event?: React.MouseEvent \| React.TouchEvent) => Promise<void>` | Async function that triggers the transition.                                   |
-| `isDarkMode`        | `boolean`                                                         | Current theme state.                                                           |
-| `mounted`           | `boolean`                                                         | `true` once mounted on client (guards against SSR hydration mismatch).         |
-| `isAnimating`       | `boolean`                                                         | `true` while the theme transition is in motion.                                |
+| Field               | Type                                 | Description                                                            |
+| :------------------ | :----------------------------------- | :--------------------------------------------------------------------- |
+| `ref`               | `React.RefObject`                    | Ref to attach to the trigger button for automatic origin coordinates.  |
+| `toggleSwitchTheme` | `(trigger?: Event) => Promise<void>` | Async function that executes the transition.                           |
+| `isDarkMode`        | `boolean`                            | Current theme state.                                                   |
+| `mounted`           | `boolean`                            | `true` once mounted on client (guards against SSR hydration mismatch). |
+| `isAnimating`       | `boolean`                            | `true` while the theme transition is in motion.                        |
+| `engine`            | `'view-transition' \| 'gsap'`        | Currently active rendering engine.                                     |
+
+---
+
+### `performSwitch(options)`
+
+Headless direct function for vanilla JavaScript or custom event handling.
+
+```typescript
+interface PerformSwitchOptions {
+  presetId?: string
+  duration?: number
+  easing?: string
+  trigger?: MouseEvent | TouchEvent | HTMLElement | { clientX: number; clientY: number }
+  globalClassName?: string
+  gifUrl?: string
+  accentColor?: string
+  engine?: 'auto' | 'view-transition' | 'gsap'
+  updateTheme?: () => void | Promise<void>
+}
+```
 
 ---
 
@@ -292,7 +397,7 @@ glowafter/
 │   │   ├── nature.ts          # 17 procedural path recipes & GIF mask specification
 │   │   ├── types.ts           # TypeScript interfaces, PresetRecipe, ModeAnimationOptions
 │   │   └── index.ts           # Comprehensive preset registry & catalog exports
-├── example/                   # Interactive Next.js 16 demonstration playground
+├── example/                   # Interactive demonstration playground
 │   ├── src/app/
 │   │   ├── page.tsx           # Playground UI, live switcher, code generator, preset gallery
 │   │   ├── layout.tsx         # Next.js App Router root layout & metadata

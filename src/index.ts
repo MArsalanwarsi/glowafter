@@ -351,6 +351,314 @@ export const runGsapCanvasTransition = async (options: {
   })
 }
 
+export interface PerformSwitchOptions {
+  presetId?: string
+  animationType?: ThemeAnimationType
+  duration?: number
+  easing?: string
+  trigger?: ThemeSwitchTrigger
+  globalClassName?: string
+  pseudoElement?: string
+  gifUrl?: string
+  accentColor?: string
+  direction?: ThemeAnimationDirection | `${ThemeAnimationDirection}`
+  blurAmount?: number
+  engine?: ThemeSwitchEngine
+  styleId?: string
+  updateTheme?: () => void | Promise<void>
+}
+
+export const performSwitch = async (options?: PerformSwitchOptions): Promise<void> => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return
+  }
+
+  const {
+    presetId,
+    animationType: directAnimationType,
+    duration: customDuration,
+    easing: customEasing,
+    trigger,
+    globalClassName = 'dark',
+    gifUrl,
+    accentColor,
+    direction = ThemeAnimationDirection.LTR,
+    engine = 'auto',
+    styleId = 'theme-switch-style',
+    updateTheme,
+  } = options || {}
+
+  injectBaseStyles()
+
+  const preset = getPresetById(presetId ?? (directAnimationType ? '' : 'viral-sweep')) ?? getPresetById('waterfall')
+  const animationType = directAnimationType ?? preset?.originalType ?? ThemeAnimationType.CIRCLE
+
+  const propsDuration =
+    customDuration ??
+    preset?.defaultDuration ??
+    (animationType === ThemeAnimationType.GIF
+      ? 2000
+      : animationType === ThemeAnimationType.POLYGON_GRADIENT
+        ? 1500
+        : 750)
+
+  const easing =
+    customEasing ??
+    preset?.defaultEasing ??
+    (animationType === ThemeAnimationType.POLYGON || animationType === ThemeAnimationType.POLYGON_GRADIENT
+      ? EXPO_OUT_EASING
+      : animationType === ThemeAnimationType.GIF
+        ? EXPO_IN_EASING
+        : 'ease-in-out')
+
+  const duration = Number.isFinite(propsDuration) ? Math.max(0, Math.min(15000, propsDuration)) : 1500
+
+  const isCurrentlyDark = document.documentElement.classList.contains(globalClassName)
+  const willBeDark = !isCurrentlyDark
+
+  const applyThemeUpdate = async () => {
+    if (updateTheme) {
+      await updateTheme()
+    } else {
+      document.documentElement.classList.toggle(globalClassName, willBeDark)
+      storeTheme(willBeDark)
+    }
+  }
+
+  // Respect reduced-motion preference
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || duration === 0) {
+    await applyThemeUpdate()
+    return
+  }
+
+  // Determine trigger origin (x, y) with reliable touch and viewport center fallback
+  let x = window.innerWidth / 2
+  let y = window.innerHeight / 2
+
+  if (trigger) {
+    const touchTarget = trigger as any
+    const touch =
+      (touchTarget.touches && touchTarget.touches.length > 0 && touchTarget.touches[0]) ||
+      (touchTarget.changedTouches && touchTarget.changedTouches.length > 0 && touchTarget.changedTouches[0]) ||
+      (touchTarget.nativeEvent?.touches &&
+        touchTarget.nativeEvent.touches.length > 0 &&
+        touchTarget.nativeEvent.touches[0]) ||
+      (touchTarget.nativeEvent?.changedTouches &&
+        touchTarget.nativeEvent.changedTouches.length > 0 &&
+        touchTarget.nativeEvent.changedTouches[0])
+
+    if (touch && typeof touch.clientX === 'number' && typeof touch.clientY === 'number') {
+      x = touch.clientX
+      y = touch.clientY
+    } else if ('clientX' in trigger && typeof trigger.clientX === 'number' && typeof trigger.clientY === 'number') {
+      x = trigger.clientX
+      y = trigger.clientY
+    } else if ('getBoundingClientRect' in trigger && typeof trigger.getBoundingClientRect === 'function') {
+      const rect = trigger.getBoundingClientRect()
+      x = rect.left + rect.width / 2
+      y = rect.top + rect.height / 2
+    }
+  }
+
+  const effectiveEngine: 'view-transition' | 'gsap' =
+    engine === 'gsap'
+      ? 'gsap'
+      : engine === 'view-transition'
+        ? 'view-transition'
+        : !(document as any).startViewTransition
+          ? 'gsap'
+          : 'view-transition'
+
+  if (gifUrl && animationType === ThemeAnimationType.GIF && !(document as any).startViewTransition) {
+    await applyThemeUpdate()
+    return
+  }
+
+  // Run GSAP Canvas Engine if requested or if View Transition API is not supported
+  if (effectiveEngine === 'gsap' && preset && !(animationType === ThemeAnimationType.GIF && gifUrl)) {
+    await runGsapCanvasTransition({
+      recipe: preset,
+      duration,
+      easing,
+      isDarkMode: willBeDark,
+      accentColor,
+      onThemeSwitch: async () => {
+        await applyThemeUpdate()
+      },
+    })
+    return
+  }
+
+  // Fallback if startViewTransition is missing in browser
+  if (!(document as any).startViewTransition) {
+    if (preset) {
+      await runGsapCanvasTransition({
+        recipe: preset,
+        duration,
+        easing,
+        isDarkMode: willBeDark,
+        accentColor,
+        onThemeSwitch: async () => {
+          await applyThemeUpdate()
+        },
+      })
+    } else {
+      await applyThemeUpdate()
+    }
+    return
+  }
+
+  // Clean up any stale transition style element
+  const existingStyle = document.getElementById(styleId)
+  if (existingStyle) {
+    existingStyle.remove()
+  }
+
+  const topLeft = Math.hypot(x, y)
+  const topRight = Math.hypot(window.innerWidth - x, y)
+  const bottomLeft = Math.hypot(x, window.innerHeight - y)
+  const bottomRight = Math.hypot(window.innerWidth - x, window.innerHeight - y)
+  const maxRadius = Math.max(topLeft, topRight, bottomLeft, bottomRight)
+
+  const presetCtx: PresetContext = {
+    x,
+    y,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    maxRadius,
+    isDarkMode: willBeDark,
+    direction,
+    duration,
+    easing,
+    accentColor,
+  }
+
+  let customCss: string
+  let gifObjectUrl: string | undefined
+  if (animationType === ThemeAnimationType.GIF && gifUrl) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000)
+    try {
+      const response = await fetch(gifUrl, { signal: controller.signal })
+      if (!response.ok) throw new Error('Could not load the GIF mask')
+      const blob = await response.blob()
+      gifObjectUrl = URL.createObjectURL(blob)
+      const image = new Image()
+      image.src = gifObjectUrl
+      await image.decode()
+    } catch (error) {
+      if (gifObjectUrl) URL.revokeObjectURL(gifObjectUrl)
+      throw error
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  if (animationType === ThemeAnimationType.GIF && gifUrl) {
+    const mask = 'url(' + JSON.stringify(gifObjectUrl ?? gifUrl).replace(/</g, '%3C') + ')'
+    customCss = `
+      ::view-transition-new(root) {
+        mask: ${mask} center / contain no-repeat;
+        mask-mode: alpha;
+        animation: gifReveal ${duration}ms linear both !important;
+      }
+      @keyframes gifReveal {
+        0%, 99.99% { mask-image: ${mask}; }
+        100% { mask-image: none; }
+      }`
+  } else if (preset?.generateStyle) {
+    customCss = preset.generateStyle(presetCtx)
+  } else if (animationType === ThemeAnimationType.QR_SCAN) {
+    const scanDir = direction || ThemeAnimationDirection.LTR
+    let fromInset = 'inset(0 100% 0 0)'
+    if (scanDir === ThemeAnimationDirection.RTL) fromInset = 'inset(0 0 0 100%)'
+    else if (scanDir === ThemeAnimationDirection.TTB) fromInset = 'inset(0 0 100% 0)'
+    else if (scanDir === ThemeAnimationDirection.BTT) fromInset = 'inset(100% 0 0 0)'
+
+    customCss = `
+      ::view-transition-new(root) {
+        animation: qrScanReveal ${duration}ms ${easing} both !important;
+        will-change: clip-path;
+      }
+      @keyframes qrScanReveal {
+        0% { clip-path: ${fromInset}; }
+        100% { clip-path: inset(0 0 0 0); }
+      }
+    `
+  } else if (animationType === ThemeAnimationType.POLYGON || animationType === ThemeAnimationType.POLYGON_GRADIENT) {
+    customCss = `
+      ::view-transition-new(root) {
+        animation: polyReveal ${duration}ms ${easing} both !important;
+        will-change: clip-path;
+      }
+      @keyframes polyReveal {
+        0% { clip-path: polygon(0 0, 0 0, 0 0); }
+        100% { clip-path: polygon(0 0, 250% 0, 0 250%); }
+      }
+    `
+  } else {
+    customCss = `
+      ::view-transition-new(root) {
+        animation: circleReveal ${duration}ms ${easing} both !important;
+        will-change: clip-path;
+      }
+      @keyframes circleReveal {
+        0% { clip-path: circle(0% at ${x}px ${y}px); }
+        100% { clip-path: circle(150% at ${x}px ${y}px); }
+      }
+    `
+  }
+
+  const fullStyleText = `
+    ::view-transition-group(root) {
+      animation-duration: ${duration}ms !important;
+      animation-timing-function: ${easing} !important;
+    }
+    ::view-transition-image-pair(root) {
+      isolation: isolate !important;
+    }
+    ::view-transition-old(root) {
+      animation: none !important;
+      mix-blend-mode: normal !important;
+      z-index: 1 !important;
+      backface-visibility: hidden !important;
+      transform: translateZ(0) !important;
+      will-change: clip-path !important;
+    }
+    ::view-transition-new(root) {
+      mix-blend-mode: normal !important;
+      z-index: 9999 !important;
+      backface-visibility: hidden !important;
+      transform: translateZ(0) !important;
+      will-change: clip-path !important;
+      animation-duration: ${duration}ms !important;
+      animation-timing-function: ${easing} !important;
+      animation-fill-mode: both !important;
+    }
+    ${customCss}
+  `
+
+  const styleElement = document.createElement('style')
+  styleElement.id = styleId
+  styleElement.textContent = fullStyleText
+  document.head.appendChild(styleElement)
+
+  try {
+    const transition = (document as any).startViewTransition(async () => {
+      await applyThemeUpdate()
+    })
+    await transition.finished
+  } catch {
+    await applyThemeUpdate()
+  } finally {
+    if (gifObjectUrl) URL.revokeObjectURL(gifObjectUrl)
+    const injected = document.getElementById(styleId)
+    if (injected === styleElement) {
+      injected.remove()
+    }
+  }
+}
+
 export const useModeAnimation = (props?: ReactThemeSwitchAnimationProps): ReactThemeSwitchAnimationHook => {
   const {
     duration: customDuration,
@@ -442,264 +750,6 @@ export const useModeAnimation = (props?: ReactThemeSwitchAnimationProps): ReactT
           : 'view-transition'
 
   const busy = useRef(false)
-  const performSwitch = async (trigger?: ThemeSwitchTrigger) => {
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
-      return
-    }
-
-    // Check actual DOM state to guarantee the first click ALWAYS toggles the theme
-    const isCurrentlyDark = document.documentElement.classList.contains(globalClassName)
-    const willBeDark = !isCurrentlyDark
-
-    // Respect reduced-motion preference
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || duration === 0) {
-      document.documentElement.classList.toggle(globalClassName, willBeDark)
-      storeTheme(willBeDark)
-      flushSync(() => setIsDarkMode(willBeDark))
-      return
-    }
-
-    // Determine trigger origin (x, y) with reliable touch and viewport center fallback
-    let x = window.innerWidth / 2
-    let y = window.innerHeight / 2
-
-    if (trigger) {
-      const touchTarget = trigger as any
-      const touch =
-        (touchTarget.touches && touchTarget.touches.length > 0 && touchTarget.touches[0]) ||
-        (touchTarget.changedTouches && touchTarget.changedTouches.length > 0 && touchTarget.changedTouches[0]) ||
-        (touchTarget.nativeEvent?.touches &&
-          touchTarget.nativeEvent.touches.length > 0 &&
-          touchTarget.nativeEvent.touches[0]) ||
-        (touchTarget.nativeEvent?.changedTouches &&
-          touchTarget.nativeEvent.changedTouches.length > 0 &&
-          touchTarget.nativeEvent.changedTouches[0])
-
-      if (touch && typeof touch.clientX === 'number' && typeof touch.clientY === 'number') {
-        x = touch.clientX
-        y = touch.clientY
-      } else if ('clientX' in trigger && typeof trigger.clientX === 'number' && typeof trigger.clientY === 'number') {
-        x = trigger.clientX
-        y = trigger.clientY
-      } else if ('getBoundingClientRect' in trigger && typeof trigger.getBoundingClientRect === 'function') {
-        const rect = trigger.getBoundingClientRect()
-        x = rect.left + rect.width / 2
-        y = rect.top + rect.height / 2
-      }
-    } else if (ref.current) {
-      const rect = ref.current.getBoundingClientRect()
-      x = rect.left + rect.width / 2
-      y = rect.top + rect.height / 2
-    }
-
-    if (gifUrl && animationType === ThemeAnimationType.GIF && !(document as any).startViewTransition) {
-      document.documentElement.classList.toggle(globalClassName, willBeDark)
-      storeTheme(willBeDark)
-      setIsDarkMode(willBeDark)
-      return
-    }
-
-    // Run GSAP Canvas Engine if requested or if View Transition API is not supported
-    if (effectiveEngine === 'gsap' && preset && !(animationType === ThemeAnimationType.GIF && gifUrl)) {
-      await runGsapCanvasTransition({
-        recipe: preset,
-        duration,
-        easing,
-        isDarkMode: willBeDark,
-        accentColor,
-        onThemeSwitch: () => {
-          document.documentElement.classList.toggle(globalClassName, willBeDark)
-          storeTheme(willBeDark)
-          setIsDarkMode(willBeDark)
-        },
-      })
-      return
-    }
-
-    // Fallback if startViewTransition is missing in browser
-    if (!(document as any).startViewTransition) {
-      if (preset) {
-        await runGsapCanvasTransition({
-          recipe: preset,
-          duration,
-          easing,
-          isDarkMode: willBeDark,
-          accentColor,
-          onThemeSwitch: () => {
-            document.documentElement.classList.toggle(globalClassName, willBeDark)
-            storeTheme(willBeDark)
-            setIsDarkMode(willBeDark)
-          },
-        })
-      } else {
-        document.documentElement.classList.toggle(globalClassName, willBeDark)
-        storeTheme(willBeDark)
-        setIsDarkMode(willBeDark)
-      }
-      return
-    }
-
-    // Clean up any stale transition style element
-    const existingStyle = document.getElementById(styleId)
-    if (existingStyle) {
-      existingStyle.remove()
-    }
-
-    // Calculate maximum radius to all corners for radial transitions
-    const topLeft = Math.hypot(x, y)
-    const topRight = Math.hypot(window.innerWidth - x, y)
-    const bottomLeft = Math.hypot(x, window.innerHeight - y)
-    const bottomRight = Math.hypot(window.innerWidth - x, window.innerHeight - y)
-    const maxRadius = Math.max(topLeft, topRight, bottomLeft, bottomRight)
-
-    const presetCtx: PresetContext = {
-      x,
-      y,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      maxRadius,
-      isDarkMode: willBeDark,
-      direction,
-      duration,
-      easing,
-      accentColor,
-    }
-
-    // Generate custom style sheet ensuring ::view-transition-group(root) receives the full duration
-    let customCss: string
-    let gifObjectUrl: string | undefined
-    if (animationType === ThemeAnimationType.GIF && gifUrl) {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 5000)
-      try {
-        const response = await fetch(gifUrl, { signal: controller.signal })
-        if (!response.ok) throw new Error('Could not load the GIF mask')
-        const blob = await response.blob()
-        gifObjectUrl = URL.createObjectURL(blob)
-        const image = new Image()
-        image.src = gifObjectUrl
-        await image.decode()
-      } catch (error) {
-        if (gifObjectUrl) URL.revokeObjectURL(gifObjectUrl)
-        throw error
-      } finally {
-        clearTimeout(timeout)
-      }
-    }
-    if (animationType === ThemeAnimationType.GIF && gifUrl) {
-      const mask = 'url(' + JSON.stringify(gifObjectUrl ?? gifUrl).replace(/</g, '%3C') + ')'
-      customCss = `
-        ::view-transition-new(root) {
-          mask: ${mask} center / contain no-repeat;
-          mask-mode: alpha;
-          animation: gifReveal ${duration}ms linear both !important;
-        }
-        @keyframes gifReveal {
-          0%, 99.99% { mask-image: ${mask}; }
-          100% { mask-image: none; }
-        }`
-    } else if (preset?.generateStyle) {
-      customCss = preset.generateStyle(presetCtx)
-    } else if (animationType === ThemeAnimationType.QR_SCAN) {
-      const scanDir = direction || ThemeAnimationDirection.LTR
-      let fromInset = 'inset(0 100% 0 0)'
-      if (scanDir === ThemeAnimationDirection.RTL) fromInset = 'inset(0 0 0 100%)'
-      else if (scanDir === ThemeAnimationDirection.TTB) fromInset = 'inset(0 0 100% 0)'
-      else if (scanDir === ThemeAnimationDirection.BTT) fromInset = 'inset(100% 0 0 0)'
-
-      customCss = `
-        ::view-transition-new(root) {
-          animation: qrScanReveal ${duration}ms ${easing} both !important;
-          will-change: clip-path;
-        }
-        @keyframes qrScanReveal {
-          0% { clip-path: ${fromInset}; }
-          100% { clip-path: inset(0 0 0 0); }
-        }
-      `
-    } else if (animationType === ThemeAnimationType.POLYGON || animationType === ThemeAnimationType.POLYGON_GRADIENT) {
-      customCss = `
-        ::view-transition-new(root) {
-          animation: polyReveal ${duration}ms ${easing} both !important;
-          will-change: clip-path;
-        }
-        @keyframes polyReveal {
-          0% { clip-path: polygon(0 0, 0 0, 0 0); }
-          100% { clip-path: polygon(0 0, 250% 0, 0 250%); }
-        }
-      `
-    } else {
-      // Circle / Blur Circle / Default
-      customCss = `
-        ::view-transition-new(root) {
-          animation: circleReveal ${duration}ms ${easing} both !important;
-          will-change: clip-path;
-        }
-        @keyframes circleReveal {
-          0% { clip-path: circle(0% at ${x}px ${y}px); }
-          100% { clip-path: circle(150% at ${x}px ${y}px); }
-        }
-      `
-    }
-
-    // Complete style block with duration and stacking overrides
-    const fullStyleText = `
-      ::view-transition-group(root) {
-        animation-duration: ${duration}ms !important;
-        animation-timing-function: ${easing} !important;
-      }
-      ::view-transition-image-pair(root) {
-        isolation: isolate !important;
-      }
-      ::view-transition-old(root) {
-        animation: none !important;
-        mix-blend-mode: normal !important;
-        z-index: 1 !important;
-        backface-visibility: hidden !important;
-        transform: translateZ(0) !important;
-        will-change: clip-path !important;
-      }
-      ::view-transition-new(root) {
-        mix-blend-mode: normal !important;
-        z-index: 9999 !important;
-        backface-visibility: hidden !important;
-        transform: translateZ(0) !important;
-        will-change: clip-path !important;
-        animation-duration: ${duration}ms !important;
-        animation-timing-function: ${easing} !important;
-        animation-fill-mode: both !important;
-      }
-      ${customCss}
-    `
-
-    const styleElement = document.createElement('style')
-    styleElement.id = styleId
-    styleElement.textContent = fullStyleText
-    document.head.appendChild(styleElement)
-
-    try {
-      // Execute transition with instantaneous DOM mutation (zero synchronous React blocking)
-      const transition = (document as any).startViewTransition(() => {
-        document.documentElement.classList.toggle(globalClassName, willBeDark)
-        storeTheme(willBeDark)
-        flushSync(() => setIsDarkMode(willBeDark))
-      })
-
-      transitionRef.current = transition
-      await transition.finished
-    } catch {
-      // Fallback in case of transition abortion
-      document.documentElement.classList.toggle(globalClassName, willBeDark)
-      setIsDarkMode(willBeDark)
-    } finally {
-      if (gifObjectUrl) URL.revokeObjectURL(gifObjectUrl)
-      transitionRef.current = null
-      const injected = document.getElementById(styleId)
-      if (injected === styleElement) {
-        injected.remove()
-      }
-    }
-  }
 
   return {
     ref,
@@ -709,7 +759,30 @@ export const useModeAnimation = (props?: ReactThemeSwitchAnimationProps): ReactT
       activeDocuments.add(document)
       setIsAnimating(true)
       try {
-        await performSwitch(trigger)
+        const isCurrentlyDark = document.documentElement.classList.contains(globalClassName)
+        const willBeDark = !isCurrentlyDark
+        const resolvedTrigger = trigger || (ref.current ? ref.current : undefined)
+
+        await performSwitch({
+          presetId,
+          animationType: directAnimationType,
+          duration,
+          easing,
+          trigger: resolvedTrigger,
+          globalClassName,
+          pseudoElement,
+          gifUrl,
+          accentColor,
+          direction,
+          blurAmount,
+          engine: effectiveEngine,
+          styleId,
+          updateTheme: () => {
+            document.documentElement.classList.toggle(globalClassName, willBeDark)
+            storeTheme(willBeDark)
+            flushSync(() => setIsDarkMode(willBeDark))
+          },
+        })
       } finally {
         busy.current = false
         activeDocuments.delete(document)

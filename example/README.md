@@ -4,12 +4,14 @@
 # glowafter Playground
 
   <p><strong>Interactive demonstration portal and live testing playground for glowafter.</strong></p>
-  <p>Engineered with Next.js 16 App Router, React 19, Tailwind CSS v4, and shadcn/ui.</p>
+  <p>Engineered for React in both JavaScript & TypeScript variants across Vite, Next.js, CRA, and Remix.</p>
 
   <p>
     <a href="https://glowafter.vercel.app"><img src="https://img.shields.io/badge/demo-live_playground-090a0c.svg?style=flat-square" alt="Live Demo" /></a>
     <a href="https://www.npmjs.com/package/glowafter"><img src="https://img.shields.io/npm/v/glowafter.svg?style=flat-square&color=38bdf8" alt="npm version" /></a>
     <a href="https://github.com/MArsalanwarsi/glowafter"><img src="https://img.shields.io/badge/github-glowafter-181717.svg?style=flat-square&logo=github" alt="GitHub Repository" /></a>
+    <img src="https://img.shields.io/badge/JavaScript-Supported-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript" />
+    <img src="https://img.shields.io/badge/TypeScript-Supported-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
   </p>
 </div>
 
@@ -17,13 +19,11 @@
 
 This is the official demonstration playground for **`glowafter`**, showcasing all 17 procedural theme transition presets and the custom GIF alpha mask engine in action.
 
-## 🌟 Features Demonstrated
+## 🌟 Universal Compatibility
 
-- **Live Full-Screen Theme Transitions**: Test all 17 procedural presets (Cinematic, Water, Material, Organic) directly on the page layout.
-- **Interactive Duration Slider**: Dynamically adjust transition durations from 0.6s to 15s to inspect motion curves and keyframe interpolation.
-- **Custom GIF Mask Studio**: Upload your own transparent animated GIF or paste a GIF URL to test custom dynamic alpha masking.
-- **1-Click Production Code Generator**: Generates copy-pasteable React + shadcn/ui + next-themes code snippets tailored to your selected preset and duration.
-- **Zero-Stutter Mobile Touch Verification**: Validates responsive multi-touch event extraction and GPU layer promotion across mobile, tablet, and desktop viewports.
+- **JavaScript & TypeScript**: Ready to drop into `.jsx`, `.js`, `.tsx`, and `.ts` files with zero build-tool configuration.
+- **Framework Agnostic**: Runs in any React setup — Vite, Next.js (App & Pages Router), Remix, Astro, or Create React App.
+- **Zero-Dependency Core**: Operates standalone with automatic `localStorage` and `classList` synchronization, or plugs into `next-themes` and `shadcn/ui`.
 
 ---
 
