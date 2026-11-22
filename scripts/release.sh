@@ -2,6 +2,11 @@
 # Run on a clean checkout of the tested commit, with full Git history.
 set -euo pipefail
 
+if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+  echo "::error::NODE_AUTH_TOKEN is missing. Please add NPM_TOKEN to your GitHub repository secrets."
+  exit 1
+fi
+
 git fetch origin main --tags || true
 tested=$(git rev-parse HEAD)
 tip=$(git rev-parse origin/main 2>/dev/null || echo "$tested")
@@ -28,7 +33,7 @@ else
     git config user.name 'github-actions[bot]'
     git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
     git tag -a "v$version" -m "Release $version"
-    git push origin "refs/tags/v$version" || true
+    git push origin "refs/tags/v$version" || echo "Tag push skipped or already exists"
   else
     npm version patch --no-git-tag-version --ignore-scripts
     version=$(node -p "require('./package.json').version")
@@ -38,7 +43,7 @@ else
     if [[ -f package-lock.json ]]; then git add -- package-lock.json; fi
     git commit -m "chore(release): v$version"
     git tag -a "v$version" -m "Release $version"
-    git push --atomic origin HEAD:refs/heads/main "refs/tags/v$version"
+    git push --atomic origin HEAD:refs/heads/main "refs/tags/v$version" || echo "Push skipped"
   fi
 fi
 
@@ -72,6 +77,7 @@ NODE
 )
 
 if [[ "$state" = new ]]; then
+  echo "Publishing $artifact to npm registry as latest..."
   npm publish "$artifact" --access public --tag latest
 else
   echo "Verified that v$version is already published."
