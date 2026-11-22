@@ -65,8 +65,6 @@ sketch
 # Output of 'npm pack'
 *.tgz
 
-package-lock.json
-
 .claude
 /test-results/
 /playwright-report/

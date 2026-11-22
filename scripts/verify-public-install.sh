@@ -16,7 +16,7 @@ for attempt in {1..12}; do
     timeout 35s node -e "
       const { execSync } = require('child_process');
       execSync('npm init -y', { stdio: 'ignore' });
-      execSync('npm install --prefer-online glowafter@$version', { stdio: 'ignore' });
+      execSync('npm install --prefer-online react react-dom glowafter@$version', { stdio: 'ignore' });
       const pkg = require('glowafter');
       if (!pkg.naturePresets) throw new Error('naturePresets missing');
       console.log('glowafter-verified');
