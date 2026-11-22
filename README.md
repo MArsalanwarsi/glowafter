@@ -219,7 +219,7 @@ npm test
 # Run Playwright browser test suite (58 tests across 3 viewports)
 npm run test:browser
 
-# Launch Afterglow interactive demo playground
+# Launch glowafter interactive demo playground
 npm --prefix example run dev -- --hostname 127.0.0.1 --port 3175
 ```
 

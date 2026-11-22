@@ -12,9 +12,9 @@ const serif = Instrument_Serif({
 })
 
 export const metadata: Metadata = {
-  title: 'Afterglow — Theme transitions',
+  title: 'glowafter — Cinematic Theme Transitions',
   description:
-    'Water, paper, glass and autumn leaves. An interactive collection of dark and light theme transitions for React and shadcn/ui.',
+    'Cinematic, stutter-free theme transition animations for React & Next.js. Powered by the View Transitions API with GSAP canvas fallback.',
 }
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

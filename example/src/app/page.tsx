@@ -102,9 +102,9 @@ export function ThemeToggle() {
         Skip to playground
       </a>
       <header className="site-header">
-        <a href="#" className="wordmark" aria-label="Afterglow home">
+        <a href="#" className="wordmark" aria-label="glowafter home">
           <span className="brand-symbol" />
-          afterglow
+          glowafter
         </a>
         <nav aria-label="Main navigation">
           <a href="#collection">Collection</a>
@@ -340,8 +340,8 @@ export function ThemeToggle() {
         </section>
       </main>
       <footer>
-        <span className="wordmark">afterglow</span>
-        <span>React Theme Switch Animation</span>
+        <span className="wordmark">glowafter</span>
+        <span>Cinematic Theme Transitions for React</span>
         <span>Made by Muhammad Arsalan Warsi</span>
       </footer>
     </div>
