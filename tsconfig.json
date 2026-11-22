@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
+    "rootDir": "./src",
     "outDir": "./dist",
     "module": "commonjs",
-    "target": "es2020",
+    "target": "es2022",
     "lib": ["dom", "esnext"],
     "jsx": "react-jsx",
     "declaration": true,
-    "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "setupTests.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
