@@ -19,13 +19,13 @@
     "view-transitions-api",
     "gsap"
   ],
-  "homepage": "https://github.com/MArsalanwarsi/light-dark-theme-switch#readme",
+  "homepage": "https://github.com/MArsalanwarsi/glowafter#readme",
   "bugs": {
-    "url": "https://github.com/MArsalanwarsi/light-dark-theme-switch/issues"
+    "url": "https://github.com/MArsalanwarsi/glowafter/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MArsalanwarsi/light-dark-theme-switch.git"
+    "url": "git+https://github.com/MArsalanwarsi/glowafter.git"
   },
   "license": "MIT",
   "author": "Muhammad Arsalan Warsi",

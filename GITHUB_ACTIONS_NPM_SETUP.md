@@ -3,7 +3,7 @@
 This 2-minute, one-time setup connects your GitHub repository to npm so that pushing to `main` automatically runs all tests and publishes `glowafter` to npm.
 
 **Repository Link:**  
-[https://github.com/MArsalanwarsi/light-dark-theme-switch](https://github.com/MArsalanwarsi/light-dark-theme-switch)
+[https://github.com/MArsalanwarsi/glowafter](https://github.com/MArsalanwarsi/glowafter)
 
 ---
 
@@ -27,7 +27,7 @@ This 2-minute, one-time setup connects your GitHub repository to npm so that pus
 ## Step 2: Add the Token to GitHub Repository Secrets
 
 1. Open your GitHub repository secrets page:  
-   [https://github.com/MArsalanwarsi/light-dark-theme-switch/settings/secrets/actions](https://github.com/MArsalanwarsi/light-dark-theme-switch/settings/secrets/actions)
+   [https://github.com/MArsalanwarsi/glowafter/settings/secrets/actions](https://github.com/MArsalanwarsi/glowafter/settings/secrets/actions)
    _(Or navigate: GitHub Repo -> Settings -> Secrets and variables -> Actions)_
 2. Click the green **"New repository secret"** button.
 3. Fill in the fields:
@@ -49,5 +49,5 @@ Once `NPM_TOKEN` is saved:
    - `scripts/verify-public-install.sh` verifies registry propagation.
 
 2. You can also trigger a release manually anytime from:  
-   [https://github.com/MArsalanwarsi/light-dark-theme-switch/actions/workflows/publish.yml](https://github.com/MArsalanwarsi/light-dark-theme-switch/actions/workflows/publish.yml)  
+   [https://github.com/MArsalanwarsi/glowafter/actions/workflows/publish.yml](https://github.com/MArsalanwarsi/glowafter/actions/workflows/publish.yml)  
    _(Click "Run workflow" -> branch "main" -> "Run workflow")_
