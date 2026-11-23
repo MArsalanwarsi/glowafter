@@ -19,6 +19,12 @@
   <p>
     <a href="https://glowafter.vercel.app"><strong>Explore Interactive Demonstration Playground »</strong></a>
   </p>
+
+  <p>
+    <a href="https://glowafter.vercel.app">
+      <img src="assets/glowafter-demo.gif" alt="glowafter Live Animation Demo" width="760" style="border-radius: 10px; max-width: 100%;" />
+    </a>
+  </p>
 </div>
 
 ---

@@ -13,6 +13,11 @@
     <img src="https://img.shields.io/badge/JavaScript-Supported-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript" />
     <img src="https://img.shields.io/badge/TypeScript-Supported-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
   </p>
+  <p>
+    <a href="https://glowafter.vercel.app">
+      <img src="public/glowafter-demo.gif" alt="glowafter Live Animation Demo" width="760" style="border-radius: 10px; max-width: 100%;" />
+    </a>
+  </p>
 </div>
 
 ---
