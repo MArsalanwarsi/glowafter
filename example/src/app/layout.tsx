@@ -32,12 +32,27 @@ export const metadata: Metadata = {
     icon: '/logo.svg',
   },
   openGraph: {
-    title: 'glowafter — Cinematic Theme Transitions for React & Next.js',
+    title: 'glowafter — Cinematic Theme Transitions for React in JS & TS',
     description:
-      'Cinematic, stutter-free theme transition animations for React & Next.js powered by View Transitions API with GSAP canvas fallback.',
+      'Cinematic, stutter-free theme transition animations for React powered by View Transitions API with GSAP canvas fallback.',
     url: 'https://glowafter.vercel.app',
     siteName: 'glowafter',
+    images: [
+      {
+        url: '/linkedin-banner.png',
+        width: 1200,
+        height: 675,
+        alt: 'glowafter — Cinematic Theme Transitions for React',
+      },
+    ],
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'glowafter — Cinematic Theme Transitions for React',
+    description:
+      'Cinematic, stutter-free theme transition animations for React powered by View Transitions API with GSAP canvas fallback.',
+    images: ['/linkedin-banner.png'],
   },
 }
 
